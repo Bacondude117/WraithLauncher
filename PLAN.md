@@ -36,8 +36,8 @@ Each step is small, builds cleanly (`wraith\build-windows.cmd build`), passes te
 
 ## Phase 3 â€” Goal 2: UI refresh (theme-first, no removed options)
 - [x] 3.1 Card delegate for unified results (rounded card, icon, title, author, summary, source chips, downloads).
-- [ ] 3.2 Wraith stylesheet polish: spacing, rounded inputs/buttons, list hover/selection, tab bar.
-- [ ] 3.3 Instance grid: optional card-style painting in `ListViewDelegate` when the Wraith theme is active
+- [x] 3.2 Wraith stylesheet polish: spacing, rounded inputs/buttons, list hover/selection, tab bar.
+- [x] 3.3 Instance grid: optional card-style painting in `ListViewDelegate` when the Wraith theme is active
       (rounded hover/selection backgrounds, more padding). Existing behaviour unchanged elsewhere.
 
 ## Phase 4 â€” Goal 3: Friend server dashboard

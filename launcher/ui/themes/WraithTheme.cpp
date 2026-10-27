@@ -19,6 +19,9 @@
 
 #include <QObject>
 
+#include "Application.h"
+#include "settings/SettingsObject.h"
+
 namespace {
 // Spectral palette. Accents are kept soft so long sessions stay easy on the eyes.
 const QColor s_window(27, 29, 36);      // #1b1d24 deep charcoal
@@ -31,6 +34,11 @@ const QColor s_cyan(127, 219, 234);     // #7fdbea pale cyan accent
 const QColor s_violet(180, 167, 255);   // #b4a7ff soft violet accent
 const QColor s_onAccent(16, 18, 26);    // #10121a
 }  // namespace
+
+bool WraithTheme::isActive()
+{
+    return APPLICATION && APPLICATION->settings() && APPLICATION->settings()->get("ApplicationTheme").toString() == themeId;
+}
 
 QString WraithTheme::id()
 {

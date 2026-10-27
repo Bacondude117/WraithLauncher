@@ -51,6 +51,7 @@
 #include "VisualGroup.h"
 #include "ui/themes/CatPainter.h"
 #include "ui/themes/ThemeManager.h"
+#include "ui/themes/WraithTheme.h"
 
 #include <Application.h>
 #include <InstanceList.h>
@@ -473,13 +474,22 @@ void InstanceView::paintEvent([[maybe_unused]] QPaintEvent* event)
         QColor background = QApplication::palette().color(QPalette::WindowText);
         QColor foreground = QApplication::palette().color(QPalette::Base);
         foreground.setAlpha(190);
+        QColor border = foreground;
+        if (WraithTheme::isActive()) {
+            // Wraith: a quiet card instead of an inverted block
+            background = QApplication::palette().color(QPalette::AlternateBase);
+            foreground = QApplication::palette().color(QPalette::Text);
+            border = QApplication::palette().color(QPalette::Highlight);
+            font.setPointSize(16);
+        }
         painter.setFont(font);
         auto fontMetrics = painter.fontMetrics();
         auto textRect = fontMetrics.boundingRect(innerBounds, Qt::AlignHCenter | Qt::TextWordWrap, emptyString);
         textRect.moveCenter(bounds.center());
 
         auto wrapRect = textRect;
-        wrapRect.adjust(-10, -10, 10, 10);
+        const bool card = WraithTheme::isActive();
+        wrapRect.adjust(card ? -28 : -10, card ? -20 : -10, card ? 28 : 10, card ? 20 : 10);
 
         // check if we are allowed to draw in our area
         if (!event->rect().intersects(wrapRect)) {
@@ -487,8 +497,8 @@ void InstanceView::paintEvent([[maybe_unused]] QPaintEvent* event)
         }
 
         painter.setBrush(QBrush(background));
-        painter.setPen(foreground);
-        painter.drawRoundedRect(wrapRect, 5.0, 5.0);
+        painter.setPen(border);
+        painter.drawRoundedRect(wrapRect, card ? 12.0 : 5.0, card ? 12.0 : 5.0);
 
         painter.setPen(foreground);
         painter.setFont(font);

@@ -26,6 +26,9 @@ class WraithTheme : public FusionTheme {
 
     static constexpr const char* themeId = "wraith";
 
+    /** true when the Wraith theme is the selected application theme; enables card-style painting in views. */
+    static bool isActive();
+
     QString id() override;
     QString name() override;
     QString tooltip() override;

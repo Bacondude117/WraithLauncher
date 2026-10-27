@@ -1,4 +1,4 @@
-# Progress
+﻿# Progress
 
 Resume from the first unchecked step in PLAN.md.
 
@@ -13,15 +13,27 @@ Resume from the first unchecked step in PLAN.md.
   when no feed URL is configured.
 - 1.5 README "About this fork"; About dialog states the fork/non-affiliation and credits Prism developers by name.
 
+- 2.1 `Unified::` merge/rank logic + 10 unit tests (`tests/UnifiedPack_test.cpp`).
+- 2.2 `UnifiedSearch`: parallel per-source NetJobs, partial results, isolated failures.
+- 2.3/2.4/3.1 "Browse Modpacks" page with `PackCardDelegate` cards, details pane, "Install from X" handoff;
+  "Advanced" heading page before the unchanged per-source pages. Verified live via UI automation
+  (posted mouse messages; see Known issues): browse, search, merge (Sky Factory 4 = ATLauncher + Technic), handoff.
+
+- 3.2/3.3 Instance grid: rounded hover/selection cards and a quiet Welcome card when the Wraith theme is active;
+  other themes paint exactly as before. Verified by screenshot with dummy instances.
+
 ## Next
-- 2.1 Unified search core logic + tests.
+- 4.1 Client-only mod filter + tests.
 
 ## Known issues
 - `FileSystem` test needs symlink privilege (admin or Developer Mode). Excluded in the helper script.
-  Running it without privilege causes looping UAC prompts — don't.
-- CMake configure prints "'vswhere.exe' is not recognized" — harmless (vcvars probing).
+  Running it without privilege causes looping UAC prompts â€” don't.
+- CMake configure prints "'vswhere.exe' is not recognized" â€” harmless (vcvars probing).
 - After changing CMake CACHE defaults, delete `build\CMakeCache.txt` before configuring.
 - After changing the `.ico`, delete `build\launcher\CMakeFiles\WraithLauncher.dir\Debug\__\program_info\*.rc.res`
   (Ninja doesn't track the icon as a dependency of the resource script).
 - macOS `.icns`/Icon Composer asset not verified (no Mac available).
-- The main window "Welcome!" overlay still uses Prism's light styling (addressed in Goal 2).
+- Unified search: CurseForge untested live (no API key on this machine). Handoff pre-fills the source page's
+  search but the user still clicks the pack there (Technic resolves to the exact pack via `#slug`).
+- GUI testing note: computer-use can't target the dev exe; UIA `Invoke` on "Add Instance" hangs (modal exec),
+  so tests post WM_LBUTTONDOWN/WM_CHAR to the window instead.
