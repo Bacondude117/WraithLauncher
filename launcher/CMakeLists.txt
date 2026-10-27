@@ -487,6 +487,12 @@ set(API_SOURCES
     snapshots/SnapshotHooks.h
     snapshots/SnapshotHooks.cpp
 
+    # Wraith: modpack creator tools (dependency/conflict check, text diffs)
+    creator/ModCheck.h
+    creator/ModCheck.cpp
+    creator/TextDiff.h
+    creator/TextDiff.cpp
+
     # Wraith: security helpers (encrypted token storage, download checksums)
     security/SecretStore.h
     security/SecretStore.cpp
@@ -843,6 +849,8 @@ SET(LAUNCHER_SOURCES
     ui/wraith/WraithBackend.h
     ui/wraith/WraithBrowse.cpp
     ui/wraith/WraithBrowse.h
+    ui/wraith/WraithCreator.cpp
+    ui/wraith/WraithCreator.h
     ui/wraith/WraithInstanceModel.cpp
     ui/wraith/WraithInstanceModel.h
     ui/wraith/WraithInstancePage.cpp

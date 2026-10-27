@@ -48,6 +48,7 @@
 #include "WraithBackend.h"
 #include "WraithListModels.h"
 #include "WraithPageHost.h"
+#include "WraithCreator.h"
 #include "WraithSnapshots.h"
 #include "WraithStyle.h"
 #include "WraithWidgets.h"
@@ -128,9 +129,9 @@ InstancePage::InstancePage(Shell* shell, MinecraftInstance* instance, QWidget* p
         QString key;
         QString label;
     };
-    const QList<Tab> tabs = { { "content", tr("Content") },     { "worlds", tr("Worlds") },   { "snapshots", tr("Snapshots") },
-                              { "screenshots", tr("Screenshots") }, { "servers", tr("Servers") }, { "logs", tr("Logs") },
-                              { "friend", tr("Friend Server") }, { "settings", tr("Settings") } };
+    const QList<Tab> tabs = { { "content", tr("Content") },         { "worlds", tr("Worlds") },   { "snapshots", tr("Snapshots") },
+                              { "creator", tr("Creator") },         { "screenshots", tr("Screenshots") }, { "servers", tr("Servers") },
+                              { "logs", tr("Logs") },               { "friend", tr("Friend Server") },    { "settings", tr("Settings") } };
     QVariantList tabModel;
     for (const auto& tab : tabs) {
         const auto pages = byTab.value(tab.key);
@@ -141,6 +142,8 @@ InstancePage::InstancePage(Shell* shell, MinecraftInstance* instance, QWidget* p
             widget = buildWorldsTab(pages.first());
         else if (tab.key == "snapshots")
             widget = buildSnapshotsTab();
+        else if (tab.key == "creator")
+            widget = buildQuickTab("creator", "CreatorTools.qml", new CreatorModel(m_shell, m_instance, this));
         else if (tab.key == "settings")
             widget = buildSettingsTab(pages);
         else if (!pages.isEmpty())
@@ -316,6 +319,21 @@ QWidget* InstancePage::buildSnapshotsTab()
     if (auto* root = list->rootObject()) {
         root->setProperty("snapshots", QVariant::fromValue<QObject*>(new SnapshotListModel(m_shell, m_instance, list)));
         root->setProperty("instanceName", m_instance->name());
+    }
+    return stack;
+}
+
+QWidget* InstancePage::buildQuickTab(const QString& key, const QString& qml, QObject* model)
+{
+    auto* stack = new QStackedWidget(m_tabs);
+    m_simpleStacks.insert(key, stack);
+    auto* view = m_shell->createQuick(qml, stack);
+    stack->addWidget(view);
+    model->setParent(view);
+    if (auto* root = view->rootObject()) {
+        root->setProperty("model", QVariant::fromValue<QObject*>(model));
+        root->setProperty("instanceName", m_instance->name());
+        root->setProperty("instanceId", m_instance->id());
     }
     return stack;
 }

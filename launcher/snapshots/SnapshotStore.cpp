@@ -435,6 +435,12 @@ Result<> Store::exportToZip(const Snapshot& snapshot, const QString& zipPath) co
     return zip.close();
 }
 
+QByteArray Store::contents(const QString& hash) const
+{
+    QFile file(objectPath(hash));
+    return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
+}
+
 qint64 Store::storageBytes() const
 {
     qint64 total = 0;

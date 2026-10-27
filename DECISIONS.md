@@ -179,6 +179,19 @@ needs no prompts during a rebuild.
 - **The ring removes old snapshots automatically.** That is the behaviour the user asked for (default 10). It can be
   set to keep everything, pinned snapshots are never removed, and deleting one by hand asks first.
 
+## D25 — Modpack creator tools build on Prism and snapshots
+- **Dependency checker** reads each jar's own metadata (Fabric, Quilt, Forge, NeoForge), including jars bundled inside
+  mods (depth 2), so modules such as Fabric API's count as installed. It runs locally and doesn't ask a mod platform's
+  API, because some mods aren't on any platform and the check should work offline. It reports with a suggestion and
+  never changes files. An unparseable version range is never reported as a problem, to avoid false alarms.
+- **Version pinning and bulk update review** already exist in Prism (update lock; the update review dialog with
+  per-mod selection and changelogs). Wraith exposes the lock as a pin icon and takes a snapshot when updates are
+  accepted, instead of writing a second updater.
+- **Export** keeps Prism's .mrpack/CurseForge export (it resolves hashes on the platforms). Wraith adds a checklist
+  before it. The checklist only reports; the user unticks files in the export dialog.
+- **Test launch** = snapshot, then a normal launch. When the game exits, a toast reports how many files changed, with
+  a link to Snapshots for a reviewed rollback. Nothing is rolled back automatically.
+
 ## D13 — Card styling is opt-in per theme
 Card painting in the instance grid and the Welcome overlay is gated on `WraithTheme::isActive()`, so every other
 theme renders exactly as in Prism, and no existing option or setting was removed.

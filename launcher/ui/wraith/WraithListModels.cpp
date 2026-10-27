@@ -49,7 +49,16 @@ ResourceListModel::ResourceListModel(ResourceFolderModel* model, QObject* parent
 QHash<int, QByteArray> ResourceListModel::roleNames() const
 {
     return { { NameRole, "name" },         { VersionRole, "version" },     { FileNameRole, "fileName" }, { EnabledRole, "isEnabled" },
-             { ProviderRole, "provider" }, { HasIssuesRole, "hasIssues" }, { SizeRole, "size" } };
+             { ProviderRole, "provider" }, { HasIssuesRole, "hasIssues" }, { SizeRole, "size" }, { PinnedRole, "pinned" },
+             { HasMetadataRole, "hasMetadata" } };
+}
+
+void ResourceListModel::setPinned(int row, bool pinned)
+{
+    // Prism's "lock updates": update checks skip a pinned version (stored in the mod's metadata)
+    const QModelIndex source = mapToSource(index(row, 0));
+    if (source.isValid())
+        m_model->setUpdateLock({ source }, pinned ? EnableAction::ENABLE : EnableAction::DISABLE);
 }
 
 QVariant ResourceListModel::data(const QModelIndex& index, int role) const
@@ -75,6 +84,10 @@ QVariant ResourceListModel::data(const QModelIndex& index, int role) const
             return resource.hasIssues();
         case SizeRole:
             return resource.sizeStr();
+        case PinnedRole:
+            return resource.lockUpdate();
+        case HasMetadataRole:
+            return resource.metadata() != nullptr;
         default:
             return {};
     }

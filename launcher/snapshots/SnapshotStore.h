@@ -121,6 +121,9 @@ class Store {
     Result<> exportToFolder(const Snapshot& snapshot, const QString& folder) const;
     Result<> exportToZip(const Snapshot& snapshot, const QString& zipPath) const;
 
+    /** The stored contents of one file of a snapshot (by its hash). */
+    QByteArray contents(const QString& hash) const;
+
     /** Bytes used by stored file contents (shared between snapshots, so less than the sum of their sizes). */
     qint64 storageBytes() const;
 

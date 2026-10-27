@@ -71,6 +71,9 @@ Resume from the first unchecked step in PLAN.md.
       and the automatic snapshot handler.
     - Verified in the app: an automatic snapshot on a mod toggle, manual snapshots, the restore preview and restore,
       compare, and the changelog.
+  - Step 3B, modpack creator tools: `launcher/creator/` (ModCheck, TextDiff; 6 unit tests) and the instance Creator
+    tab (health check, export checklist, changelog, config diff, test launch, pins), plus pin icons in Content.
+    Verified: the health check on a real 16-mod pack, the export checklist, the changelog and the config diff.
 
 ## Next
 - Follow-ups are in SUMMARY.md under "Unfinished and risky": a real game launch and server start (both need an

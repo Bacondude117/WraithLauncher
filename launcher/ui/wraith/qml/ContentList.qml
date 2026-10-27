@@ -113,6 +113,8 @@ Rectangle {
                     required property bool isEnabled
                     required property string provider
                     required property bool hasIssues
+                    required property bool pinned
+                    required property bool hasMetadata
                     width: list.width
                     height: 62
                     radius: 10
@@ -160,6 +162,16 @@ Rectangle {
                         id: controls
                         anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter }
                         spacing: 12
+                        // pin the installed version so update checks skip it (needs download metadata)
+                        IconButton {
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: row.hasMetadata
+                            icon: "pin"
+                            tip: row.pinned ? qsTr("Pinned: updates skip this version. Click to unpin.") : qsTr("Pin this version")
+                            iconColor: row.pinned ? Theme.warning : Theme.textMuted
+                            opacity: row.pinned || rowMouse.containsMouse ? 1 : 0
+                            onClicked: root.model.setPinned(row.index, !row.pinned)
+                        }
                         IconButton {
                             anchors.verticalCenter: parent.verticalCenter
                             icon: "trash"

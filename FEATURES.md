@@ -168,3 +168,10 @@ newest toast's button, and run whatever a key sequence is bound to (`key Ctrl+G`
 | Compare two snapshots | Snapshot → Compare with... | Verified |
 | Export a snapshot as a folder or zip | Snapshot → Export | Moved (folder export unit-tested; the file dialogs weren't driven) |
 | Instance export and copy leave the snapshot store out | Prism's export/copy dialogs | Moved |
+| **B. Changelog generator** between snapshots (or a snapshot and now), Markdown | Instance → **Creator** → Changelog; Snapshots panel | Verified |
+| Dependency/conflict checker (missing/disabled dependencies, declared incompatibilities, duplicates, wrong loader, Minecraft range; reads bundled mods) | Creator → Health check | Verified (real 16-mod NeoForge pack: no false alarms; unit tests for every rule) |
+| Version pinning (Prism's update lock) | Content tab pin icon on mods with download metadata; Creator → Version pins | Moved |
+| Bulk update review | Content → Check for updates opens Prism's review dialog (select which updates, changelogs); an automatic snapshot is taken when it is accepted | Moved |
+| Export to .mrpack and CurseForge with a pre-export checklist (mod problems, mods without download info and licences, disabled mods, personal files, large files, release snapshot) | Creator → Export | Verified (checklist); the export dialog itself is Prism's (Verified in §3) |
+| Config diff between snapshots, line by line | Creator → Config diff | Verified |
+| Test launch (snapshot, play, then a summary of what changed with a way to roll back) | Creator → Test launch | Moved (needs an account to launch) |

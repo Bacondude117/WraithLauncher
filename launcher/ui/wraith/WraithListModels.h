@@ -33,7 +33,17 @@ class ResourceListModel : public QSortFilterProxyModel {
     Q_PROPERTY(int enabledCount READ enabledCount NOTIFY countChanged)
 
    public:
-    enum Roles { NameRole = Qt::UserRole + 200, VersionRole, FileNameRole, EnabledRole, ProviderRole, HasIssuesRole, SizeRole };
+    enum Roles {
+        NameRole = Qt::UserRole + 200,
+        VersionRole,
+        FileNameRole,
+        EnabledRole,
+        ProviderRole,
+        HasIssuesRole,
+        SizeRole,
+        PinnedRole,
+        HasMetadataRole
+    };
 
     ResourceListModel(ResourceFolderModel* model, QObject* parent);
 
@@ -49,6 +59,8 @@ class ResourceListModel : public QSortFilterProxyModel {
     /** Prism's models load lazily (when their page opens); this loads the folder now. */
     Q_INVOKABLE void refresh();
     Q_INVOKABLE void setEnabled(int row, bool enabled);
+    /** Pin (lock) the installed version so update checks skip it. Needs download metadata. */
+    Q_INVOKABLE void setPinned(int row, bool pinned);
     Q_INVOKABLE void remove(int row);
     Q_INVOKABLE void openFolder();
 
