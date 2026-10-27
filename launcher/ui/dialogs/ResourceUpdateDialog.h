@@ -29,6 +29,7 @@ class ResourceUpdateDialog final : public ReviewMessageBox {
     void appendResource(const CheckUpdateTask::Update& info, QStringList requiredBy = {});
 
     QList<ResourceDownloadTask::Ptr> getTasks() const;
+    void accept() override;  // Wraith: automatic snapshot before updates are applied
     auto indexDir() const -> QDir { return m_resourceModel->indexDir(); }
 
     auto noUpdates() const -> bool { return m_noUpdates; };

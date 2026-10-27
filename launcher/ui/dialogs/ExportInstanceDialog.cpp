@@ -74,6 +74,9 @@ ExportInstanceDialog::ExportInstanceDialog(BaseInstance* instance, QWidget* pare
         m_proxyModel->ignoreFilesWithPath().insert(FS::PathCombine(prefix, path));
     }
     m_proxyModel->ignoreFilesWithName().append({ ".DS_Store", "thumbs.db", "Thumbs.db" });
+    // Wraith: snapshots and the friend server folder aren't part of an exported instance (snapshots export separately)
+    m_proxyModel->ignoreFilesWithPath().insert(".wraith");
+    m_proxyModel->ignoreFilesWithPath().insert("wraith-server");
     m_proxyModel->loadBlockedPathsFromFile(ignoreFileName());
 
     m_ui->treeView->setModel(m_proxyModel);

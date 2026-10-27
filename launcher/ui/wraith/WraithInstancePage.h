@@ -55,6 +55,7 @@ class InstancePage : public QWidget, public ShellPage {
    private:
     QWidget* buildContentTab(const QList<BasePage*>& pages);
     QWidget* buildWorldsTab(BasePage* page);
+    QWidget* buildSnapshotsTab();
     QWidget* buildSettingsTab(const QList<BasePage*>& pages);
     PageHost* hostTab(const QString& tab, const QList<BasePage*>& pages);
     void showAdvanced(QStackedWidget* stack, PageHost* host, const QString& pageId);

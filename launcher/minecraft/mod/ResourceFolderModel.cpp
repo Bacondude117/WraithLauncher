@@ -1,4 +1,5 @@
 #include "ResourceFolderModel.h"
+#include "snapshots/SnapshotHooks.h"
 #include <QMessageBox>
 
 #include <QCoreApplication>
@@ -104,6 +105,7 @@ bool ResourceFolderModel::stopWatching(const QStringList& paths)
 
 bool ResourceFolderModel::installResource(QString originalPath)
 {
+    Wraith::Snapshots::beforeChange(m_instance, Wraith::Snapshots::Change::Content);  // Wraith: automatic snapshot
     // NOTE: fix for GH-1178: remove trailing slash to avoid issues with using the empty result of QFileInfo::fileName
     originalPath = FS::NormalizePath(originalPath);
     QFileInfo fileInfo(originalPath);
@@ -182,6 +184,7 @@ bool ResourceFolderModel::installResource(QString originalPath)
 
 void ResourceFolderModel::installResourceWithFlameMetadata(const QString& path, ModPlatform::IndexedVersion& vers)
 {
+    Wraith::Snapshots::beforeChange(m_instance, Wraith::Snapshots::Change::Content);  // Wraith: automatic snapshot
     auto install = [this, path] { installResource(path); };
     if (vers.addonId.isValid()) {
         ModPlatform::IndexedPack pack{
@@ -206,6 +209,7 @@ void ResourceFolderModel::installResourceWithFlameMetadata(const QString& path, 
 
 bool ResourceFolderModel::uninstallResource(const QString& fileName, bool preserveMetadata)
 {
+    Wraith::Snapshots::beforeChange(m_instance, Wraith::Snapshots::Change::Content);  // Wraith: automatic snapshot
     for (auto& resource : m_resources) {
         auto resourceFileInfo = resource->fileinfo();
         auto resourceFileName = resource->fileinfo().fileName();
@@ -226,6 +230,7 @@ bool ResourceFolderModel::uninstallResource(const QString& fileName, bool preser
 
 bool ResourceFolderModel::deleteResources(const QModelIndexList& indexes)
 {
+    Wraith::Snapshots::beforeChange(m_instance, Wraith::Snapshots::Change::Content);  // Wraith: automatic snapshot
     if (indexes.isEmpty()) {
         return true;
     }
@@ -264,6 +269,7 @@ void ResourceFolderModel::deleteMetadata(const QModelIndexList& indexes)
 
 bool ResourceFolderModel::setResourceEnabled(const QModelIndexList& indexes, EnableAction action)
 {
+    Wraith::Snapshots::beforeChange(m_instance, Wraith::Snapshots::Change::Content);  // Wraith: automatic snapshot
     if (m_instance != nullptr && m_instance->isRunning()) {
         auto response =
             CustomMessageBox::selectable(nullptr, tr("Confirm toggle"),

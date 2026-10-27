@@ -18,6 +18,7 @@
  */
 
 #include "ResourceDownloadDialog.h"
+#include "snapshots/SnapshotHooks.h"
 #include <QList>
 
 #include <QPushButton>
@@ -101,6 +102,8 @@ ResourceDownloadDialog::ResourceDownloadDialog(QWidget* parent,
 
 void ResourceDownloadDialog::accept()
 {
+    if (auto* model = getBaseModel())
+        Wraith::Snapshots::beforeChange(model->instance(), Wraith::Snapshots::Change::Content);  // Wraith: automatic snapshot
     if (!geometrySaveKey().isEmpty()) {
         APPLICATION->settings()->set(geometrySaveKey(), QString::fromUtf8(saveGeometry().toBase64()));
     }

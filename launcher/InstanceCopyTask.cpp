@@ -24,6 +24,10 @@ InstanceCopyTask::InstanceCopyTask(BaseInstance* origInstance, const InstanceCop
             filters += "|";
         filters += "instance.cfg";
     }
+    // Wraith: a copy starts without the original's snapshot history and friend server folder
+    if (!filters.isEmpty())
+        filters += "|";
+    filters += "^\\.wraith|^wraith-server";
 
     qDebug() << "CopyFilters:" << filters;
 

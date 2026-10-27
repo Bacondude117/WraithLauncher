@@ -163,6 +163,22 @@ the image provider, which looks the same. Smoother GPU rendering is a user setti
 SHA-1 of every file Wraith copies, and only replaces or removes files that still match it. This is simple, testable and
 needs no prompts during a rebuild.
 
+## D24 — Snapshot design
+- **Where:** inside the instance (`.wraith/snapshots`), so snapshots move with the instance and need no global
+  database. The store is plain files: contents named by SHA-1 (stored once), plus one JSON file per snapshot, so it
+  can be inspected or recovered by hand (no proprietary storage). Prism's export and copy leave it out.
+- **Hooks, not a watcher:** one-line `Snapshots::beforeChange()` calls in Prism code (PackProfile component edits,
+  ResourceFolderModel install/remove/enable, the resource download/update dialogs, modpack update). The UI installs
+  the handler, so the logic layer and the tests have no UI dependency. A burst of changes gets one snapshot (five-minute
+  window per instance).
+- **Blocking with progress:** a snapshot must finish before the change it protects. It runs on a worker thread while
+  a modal progress dialog keeps the window alive. A hash cache (path, size, mtime) makes snapshots after the first
+  one quick.
+- **Restore never rolls back `instance.cfg`:** it holds playtime counters and settings that the launcher keeps in memory
+  and would overwrite. Restore saves the current state as a snapshot first, so it can always be undone.
+- **The ring removes old snapshots automatically.** That is the behaviour the user asked for (default 10). It can be
+  set to keep everything, pinned snapshots are never removed, and deleting one by hand asks first.
+
 ## D13 — Card styling is opt-in per theme
 Card painting in the instance grid and the Welcome overlay is gated on `WraithTheme::isActive()`, so every other
 theme renders exactly as in Prism, and no existing option or setting was removed.

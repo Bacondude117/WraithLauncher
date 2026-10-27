@@ -64,6 +64,7 @@
 
 #include "ComponentUpdateTask.h"
 #include "PackProfile.h"
+#include "snapshots/SnapshotHooks.h"
 #include "PackProfile_p.h"
 #include "modplatform/ModIndex.h"
 
@@ -436,6 +437,7 @@ void PackProfile::componentDataChanged()
 
 bool PackProfile::remove(const int index)
 {
+    Wraith::Snapshots::beforeChange(d->m_instance, Wraith::Snapshots::Change::Components);  // Wraith: automatic snapshot
     auto patch = getComponent(index);
     if (!patch->isRemovable()) {
         qCWarning(instanceProfileC) << d->m_instance->name() << "|" << "Patch" << patch->getID() << "is non-removable";
@@ -470,6 +472,7 @@ bool PackProfile::remove(const QString& id)
 
 bool PackProfile::customize(int index)
 {
+    Wraith::Snapshots::beforeChange(d->m_instance, Wraith::Snapshots::Change::Components);  // Wraith: automatic snapshot
     auto patch = getComponent(index);
     if (!patch->isCustomizable()) {
         qCDebug(instanceProfileC) << d->m_instance->name() << "|" << "Patch" << patch->getID() << "is not customizable";
@@ -486,6 +489,7 @@ bool PackProfile::customize(int index)
 
 bool PackProfile::revertToBase(int index)
 {
+    Wraith::Snapshots::beforeChange(d->m_instance, Wraith::Snapshots::Change::Components);  // Wraith: automatic snapshot
     auto patch = getComponent(index);
     if (!patch->isRevertible()) {
         qCDebug(instanceProfileC) << d->m_instance->name() << "|" << "Patch" << patch->getID() << "is not revertible";
@@ -680,18 +684,21 @@ void PackProfile::invalidateLaunchProfile()
 
 void PackProfile::installJarMods(QStringList selectedFiles)
 {
+    Wraith::Snapshots::beforeChange(d->m_instance, Wraith::Snapshots::Change::Components);  // Wraith: automatic snapshot
     // FIXME: get rid of _internal
     installJarMods_internal(selectedFiles);
 }
 
 void PackProfile::installCustomJar(QString selectedFile)
 {
+    Wraith::Snapshots::beforeChange(d->m_instance, Wraith::Snapshots::Change::Components);  // Wraith: automatic snapshot
     // FIXME: get rid of _internal
     installCustomJar_internal(selectedFile);
 }
 
 bool PackProfile::installComponents(QStringList selectedFiles)
 {
+    Wraith::Snapshots::beforeChange(d->m_instance, Wraith::Snapshots::Change::Components);  // Wraith: automatic snapshot
     const QString patchDir = FS::PathCombine(d->m_instance->instanceRoot(), "patches");
     if (!FS::ensureFolderPathExists(patchDir))
         return false;
@@ -721,12 +728,14 @@ bool PackProfile::installComponents(QStringList selectedFiles)
 
 void PackProfile::installAgents(QStringList selectedFiles)
 {
+    Wraith::Snapshots::beforeChange(d->m_instance, Wraith::Snapshots::Change::Components);  // Wraith: automatic snapshot
     // FIXME: get rid of _internal
     installAgents_internal(selectedFiles);
 }
 
 bool PackProfile::installEmpty(const QString& uid, const QString& name)
 {
+    Wraith::Snapshots::beforeChange(d->m_instance, Wraith::Snapshots::Change::Components);  // Wraith: automatic snapshot
     QString patchDir = FS::PathCombine(d->m_instance->instanceRoot(), "patches");
     if (!FS::ensureFolderPathExists(patchDir)) {
         return false;
@@ -978,6 +987,7 @@ std::shared_ptr<LaunchProfile> PackProfile::getProfile() const
 
 bool PackProfile::setComponentVersion(const QString& uid, const QString& version, bool important)
 {
+    Wraith::Snapshots::beforeChange(d->m_instance, Wraith::Snapshots::Change::Components);  // Wraith: automatic snapshot
     auto iter = d->componentIndex.find(uid);
     if (iter != d->componentIndex.end()) {
         ComponentPtr component = *iter;

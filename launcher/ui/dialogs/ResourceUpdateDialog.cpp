@@ -1,4 +1,5 @@
 #include "ResourceUpdateDialog.h"
+#include "snapshots/SnapshotHooks.h"
 #include "Application.h"
 #include "ChooseProviderDialog.h"
 #include "CustomMessageBox.h"
@@ -540,4 +541,10 @@ auto ResourceUpdateDialog::getTasks() const -> QList<ResourceDownloadTask::Ptr>
     }
 
     return list;
+}
+
+void ResourceUpdateDialog::accept()
+{
+    Wraith::Snapshots::beforeChange(m_instance, Wraith::Snapshots::Change::Content);
+    ReviewMessageBox::accept();
 }

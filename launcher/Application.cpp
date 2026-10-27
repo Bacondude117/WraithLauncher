@@ -665,6 +665,9 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         m_settings->registerSetting("WraithBrowseSources", QString());  // comma-separated sources the user switched off
         m_settings->registerSetting("WraithRefreshTranslationsOnStart", true);
         m_settings->registerSetting("WraithGpuInterface", false);  // Qt Quick GPU renderer (smoother, ~150 MB more)
+        m_settings->registerSetting("WraithSnapshotsAuto", true);           // snapshot before mod/modpack/loader/version changes
+        m_settings->registerSetting("WraithSnapshotRingSize", 10);          // unpinned snapshots kept per instance (0 = all)
+        m_settings->registerSetting("WraithSnapshotIncludeWorlds", false);  // automatic snapshots include saves/
 
         m_settings->registerSetting("NumberOfConcurrentTasks", 10);
         m_settings->registerSetting("NumberOfConcurrentDownloads", 6);

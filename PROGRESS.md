@@ -66,6 +66,11 @@ Resume from the first unchecked step in PLAN.md.
       navigation.
     - Verified by script: copy, rename, change group, icon picker, export (zip and mrpack), create shortcut, delete
       and Undo, `--show`, `--alive`, `--import`, and the shortcuts.
+  - Step 3A, snapshots:
+    - Built: `launcher/snapshots/` (store, diff and changelog logic, hooks; 7 unit tests), the instance Snapshots tab,
+      and the automatic snapshot handler.
+    - Verified in the app: an automatic snapshot on a mod toggle, manual snapshots, the restore preview and restore,
+      compare, and the changelog.
 
 ## Next
 - Follow-ups are in SUMMARY.md under "Unfinished and risky": a real game launch and server start (both need an

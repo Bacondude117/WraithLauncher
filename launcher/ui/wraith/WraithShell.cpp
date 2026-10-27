@@ -56,6 +56,7 @@
 #include "WraithInstancePage.h"
 #include "WraithNewInstance.h"
 #include "WraithSettingsPage.h"
+#include "WraithSnapshots.h"
 #include "WraithStyle.h"
 
 namespace Wraith {
@@ -88,6 +89,7 @@ Shell::Shell(MainWindow* window, QWidget* parent) : QWidget(parent), m_window(wi
     m_engine->rootContext()->setContextProperty("browseModel", new BrowseModel(this));
     m_newInstance = new NewInstanceSheet(this);
     m_engine->rootContext()->setContextProperty("newInstance", m_newInstance);
+    SnapshotService::install(this);  // automatic snapshots before mod/modpack/loader/version changes
 
     auto* layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);

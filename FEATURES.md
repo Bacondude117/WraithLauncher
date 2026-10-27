@@ -154,3 +154,17 @@ newest toast's button, and run whatever a key sequence is bound to (`key Ctrl+G`
 | Friend server dashboard and list | **Servers** page, Friend Server tab, toasts | Verified (setup; running a server needs the user's EULA consent) |
 | Quilt and Fabric friend servers (official installers, verified downloads) | Same | Moved (Quilt verified in round 2; the Fabric installer path is new) |
 | Privacy & security settings | Settings → Privacy & security | Verified |
+
+## 8. Round 4 features
+
+| Feature | Where | Status |
+|---|---|---|
+| **A. Snapshots**: automatic snapshot before mod, modpack, Minecraft or loader changes (switch, at most one per 5 minutes) | Instance → **Snapshots**; Settings → General | Verified (toggling a mod took one, with a "View" toast) |
+| Manual snapshots with a name, optionally with worlds | Snapshots → Take snapshot | Verified |
+| Ring of N snapshots (default 10, or keep all); pin to keep forever; rename | Snapshots tab and Settings → General | Verified (ring, pinning: unit tests; rename/pin buttons: Moved) |
+| Deduplicated storage (each file stored once, SHA-1) | `<instance>/.wraith/snapshots` (plain files + JSON) | Verified (unit tests) |
+| Worlds left out unless asked; logs, caches, screenshots never | Same | Verified (unit tests) |
+| Restore with a preview of what changes; current state saved first; playtime/settings never rolled back | Snapshot → Restore... | Verified (restore preview and restore in the app; unit tests) |
+| Compare two snapshots | Snapshot → Compare with... | Verified |
+| Export a snapshot as a folder or zip | Snapshot → Export | Moved (folder export unit-tested; the file dialogs weren't driven) |
+| Instance export and copy leave the snapshot store out | Prism's export/copy dialogs | Moved |

@@ -13,6 +13,12 @@ Rectangle {
     readonly property var model: current ? current.model : null
     signal action(string action, string pageId)
 
+    // used by the UI test script: "row,on" e.g. "0,false"
+    function setRowEnabled(arg) {
+        const parts = String(arg).split(",")
+        if (model)
+            model.setEnabled(Number(parts[0]), parts[1] === "true")
+    }
     function refresh() {
         for (let i = 0; i < types.length; i++)
             types[i].model.refresh()

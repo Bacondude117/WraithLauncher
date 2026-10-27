@@ -479,6 +479,14 @@ set(API_SOURCES
     server/ServerFileSync.h
     server/ServerFileSync.cpp
 
+    # Wraith: instance snapshots
+    snapshots/SnapshotStore.h
+    snapshots/SnapshotStore.cpp
+    snapshots/SnapshotDiff.h
+    snapshots/SnapshotDiff.cpp
+    snapshots/SnapshotHooks.h
+    snapshots/SnapshotHooks.cpp
+
     # Wraith: security helpers (encrypted token storage, download checksums)
     security/SecretStore.h
     security/SecretStore.cpp
@@ -851,6 +859,8 @@ SET(LAUNCHER_SOURCES
     ui/wraith/WraithSettingsPage.h
     ui/wraith/WraithShell.cpp
     ui/wraith/WraithShell.h
+    ui/wraith/WraithSnapshots.cpp
+    ui/wraith/WraithSnapshots.h
     ui/wraith/WraithStyle.cpp
     ui/wraith/WraithStyle.h
 

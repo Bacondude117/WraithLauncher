@@ -233,6 +233,16 @@ QWidget* SettingsPage::buildSimple(const Category& category, PageHost* host, QSt
                      switchFor("CloseAfterLaunch", [this](bool on) { write("game", [on] { APPLICATION->settings()->set("CloseAfterLaunch", on); }); }, card));
         card->addRow(tr("Quit the launcher when the game closes"), QString(),
                      switchFor("QuitAfterGameStop", [this](bool on) { write("game", [on] { APPLICATION->settings()->set("QuitAfterGameStop", on); }); }, card));
+        card->addRow(tr("Automatic snapshots"),
+                     tr("Save a snapshot before mods, a modpack, Minecraft or a loader change, so you can go back (instance → Snapshots)."),
+                     switchFor("WraithSnapshotsAuto", [](bool on) { APPLICATION->settings()->set("WraithSnapshotsAuto", on); }, card));
+        auto* ring = new QComboBox(card);
+        for (int size : { 5, 10, 20, 50 })
+            ring->addItem(tr("%1 snapshots").arg(size), size);
+        ring->addItem(tr("All snapshots"), 0);
+        ring->setCurrentIndex(std::max(0, ring->findData(settings->get("WraithSnapshotRingSize"))));
+        connect(ring, &QComboBox::activated, this, [ring] { APPLICATION->settings()->set("WraithSnapshotRingSize", ring->currentData()); });
+        card->addRow(tr("Snapshots to keep per instance"), tr("The oldest are removed first. Pinned snapshots are always kept."), ring);
         card->addRow(tr("Download game files when creating an instance"), tr("Otherwise they download on first launch."),
                      switchFor("DownloadGameFilesDuringInstanceCreation", [this](bool on) {
                          write("general", [on] { APPLICATION->settings()->set("DownloadGameFilesDuringInstanceCreation", on); });

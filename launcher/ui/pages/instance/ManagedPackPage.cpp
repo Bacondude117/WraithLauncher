@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "ManagedPackPage.h"
+#include "snapshots/SnapshotHooks.h"
 #include <QDesktopServices>
 #include <QLineEdit>
 #include <QUrl>
@@ -481,6 +482,7 @@ void ManagedPackPage::updatePack(const QUrl& url,
     if (response != QMessageBox::Yes) {
         return;
     }
+    Wraith::Snapshots::beforeChange(m_inst, Wraith::Snapshots::Change::Modpack);  // Wraith: automatic snapshot
 
     QMap<QString, QString> extraInfo;
     // NOTE: Don't use 'm_pack.id' here, since we didn't completely parse all the metadata for the pack, including this field.

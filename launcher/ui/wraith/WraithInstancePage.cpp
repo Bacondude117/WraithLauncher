@@ -48,6 +48,7 @@
 #include "WraithBackend.h"
 #include "WraithListModels.h"
 #include "WraithPageHost.h"
+#include "WraithSnapshots.h"
 #include "WraithStyle.h"
 #include "WraithWidgets.h"
 
@@ -127,9 +128,9 @@ InstancePage::InstancePage(Shell* shell, MinecraftInstance* instance, QWidget* p
         QString key;
         QString label;
     };
-    const QList<Tab> tabs = { { "content", tr("Content") }, { "worlds", tr("Worlds") },   { "screenshots", tr("Screenshots") },
-                              { "servers", tr("Servers") }, { "logs", tr("Logs") },       { "friend", tr("Friend Server") },
-                              { "settings", tr("Settings") } };
+    const QList<Tab> tabs = { { "content", tr("Content") },     { "worlds", tr("Worlds") },   { "snapshots", tr("Snapshots") },
+                              { "screenshots", tr("Screenshots") }, { "servers", tr("Servers") }, { "logs", tr("Logs") },
+                              { "friend", tr("Friend Server") }, { "settings", tr("Settings") } };
     QVariantList tabModel;
     for (const auto& tab : tabs) {
         const auto pages = byTab.value(tab.key);
@@ -138,6 +139,8 @@ InstancePage::InstancePage(Shell* shell, MinecraftInstance* instance, QWidget* p
             widget = buildContentTab(pages);
         else if (tab.key == "worlds" && pages.size() == 1)
             widget = buildWorldsTab(pages.first());
+        else if (tab.key == "snapshots")
+            widget = buildSnapshotsTab();
         else if (tab.key == "settings")
             widget = buildSettingsTab(pages);
         else if (!pages.isEmpty())
@@ -299,6 +302,20 @@ QWidget* InstancePage::buildWorldsTab(BasePage* page)
         auto* relay = new QAction(list);
         connect(relay, &QAction::triggered, this, [this, stack, host] { showAdvanced(stack, host, "worlds"); });
         QObject::connect(root, SIGNAL(advanced()), relay, SLOT(trigger()));
+    }
+    return stack;
+}
+
+QWidget* InstancePage::buildSnapshotsTab()
+{
+    // a one-page stack, so showTab() refreshes the list whenever the tab is shown
+    auto* stack = new QStackedWidget(m_tabs);
+    m_simpleStacks.insert("snapshots", stack);
+    auto* list = m_shell->createQuick("SnapshotsList.qml", stack);
+    stack->addWidget(list);
+    if (auto* root = list->rootObject()) {
+        root->setProperty("snapshots", QVariant::fromValue<QObject*>(new SnapshotListModel(m_shell, m_instance, list)));
+        root->setProperty("instanceName", m_instance->name());
     }
     return stack;
 }
@@ -539,6 +556,12 @@ void InstancePage::scriptCall(const QString& function, const QString& argument)
 {
     if (function == "tab")
         selectTab(argument);
+    else if (function.startsWith("qml:")) {
+        // call a function on the current tab's Qt Quick view, e.g. "qml:takeSnapshot Before test"
+        if (auto* stack = m_simpleStacks.value(m_tab))
+            if (auto* quick = qobject_cast<QQuickWidget*>(stack->widget(0)); quick && quick->rootObject())
+                QMetaObject::invokeMethod(quick->rootObject(), function.mid(4).toUtf8().constData(), Q_ARG(QVariant, argument));
+    }
     else if (function == "advanced") {
         const QString tab = tabForPage(argument);
         showTab(tab);
