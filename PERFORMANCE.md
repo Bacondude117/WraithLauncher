@@ -46,6 +46,7 @@ What the numbers mean:
 |---|---|---|
 | 2026-10-27 | First measurement (round 3 shell, GPU renderer, shader blur) | 472 ms / 146.1 MB / 276.5 MB |
 | 2026-10-27 | Software renderer by default; cover art blurred on the CPU | 382 ms / 100.0 MB / 119.3 MB |
+| 2026-10-27 | Round 4 features (snapshots, creator, log viewer, import, gallery: all created on first use); installed build, 3 runs (Prism 306 ms / 61.0 MB / 77.2 MB) | 355 ms / 100.5 MB / 119.9 MB |
 
 ## Ideas not yet done
 - Create the Home page lazily after the window is shown (startup shows the sidebar first).
