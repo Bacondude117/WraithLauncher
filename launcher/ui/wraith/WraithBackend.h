@@ -97,6 +97,13 @@ class Backend : public QObject {
     Q_INVOKABLE void showLaunchMenu(const QString& id);
     Q_INVOKABLE void showGroupMenu(const QString& group);
 
+    // friend servers
+    /** [{ id, name, icon, loader, minecraft, port, state, running, busy }] for instances that have a server. */
+    Q_INVOKABLE QVariantList friendServers();
+    Q_INVOKABLE void startServer(const QString& id);
+    Q_INVOKABLE void stopServer(const QString& id);
+    Q_INVOKABLE void newServer(const QString& id);
+
     // global actions
     Q_INVOKABLE void newInstance(const QString& group = QString());
     Q_INVOKABLE void advancedNewInstance(const QString& pageId = QString());
@@ -117,6 +124,7 @@ class Backend : public QObject {
     void instancesUpdated();
     void accountChanged();
     void catChanged();
+    void serversChanged();
 
    private:
     void popup(QMenu* menu);

@@ -28,9 +28,13 @@
 #include <QTimer>
 #include <QUrl>
 
+#include <QDir>
+
 #include "Application.h"
 #include "DesktopServices.h"
+#include "FileSystem.h"
 #include "InstanceList.h"
+#include "server/FriendServer.h"
 #include "icons/IconList.h"
 #include "minecraft/MinecraftInstance.h"
 #include "minecraft/auth/AccountList.h"
@@ -366,6 +370,94 @@ void Backend::showGroupMenu(const QString& group)
     });
     menu->addAction(tr("Delete group"), this, [group] { APPLICATION->instances()->deleteGroup(group); });
     popup(menu);
+}
+
+QVariantList Backend::friendServers()
+{
+    using WraithServer::FriendServer;
+    QVariantList result;
+    auto* list = APPLICATION->instances();
+    for (int i = 0; i < list->count(); i++) {
+        auto* instance = list->at(i);
+        if (!QDir(FS::PathCombine(instance->instanceRoot(), "wraith-server")).exists())
+            continue;
+        auto* server = FriendServer::forInstance(instance);
+        connect(server, &FriendServer::stateChanged, this, &Backend::serversChanged, Qt::UniqueConnection);
+        if (!server->property("wraithToasts").toBool()) {
+            // tell the user when a server comes up or goes down, wherever they are in the launcher
+            server->setProperty("wraithToasts", true);
+            auto last = std::make_shared<FriendServer::State>(server->state());
+            connect(server, &FriendServer::stateChanged, this, [this, server, instance, last] {
+                const auto now = server->state();
+                if (now == FriendServer::State::Running && *last != now)
+                    m_shell->toast(tr("%1 server is online on port %2").arg(instance->name()).arg(server->port()), "success");
+                else if (now == FriendServer::State::Stopped && *last != FriendServer::State::SettingUp && *last != now)
+                    m_shell->toast(tr("%1 server stopped").arg(instance->name()));
+                else if (now == FriendServer::State::Stopped && *last == FriendServer::State::SettingUp)
+                    m_shell->toast(tr("%1 server is set up").arg(instance->name()), "success");
+                *last = now;
+            });
+        }
+        QString state;
+        switch (server->state()) {
+            case FriendServer::State::NotSetUp:
+                state = tr("Not set up");
+                break;
+            case FriendServer::State::SettingUp:
+                state = tr("Setting up");
+                break;
+            case FriendServer::State::Stopped:
+                state = tr("Offline");
+                break;
+            case FriendServer::State::Starting:
+                state = tr("Starting");
+                break;
+            case FriendServer::State::Running:
+                state = tr("Online");
+                break;
+            case FriendServer::State::Stopping:
+                state = tr("Stopping");
+                break;
+        }
+        auto info = instanceInfo(instance);
+        info.insert("loader", FriendServer::loaderName(server->loader()));
+        info.insert("minecraft", server->minecraftVersion());
+        info.insert("port", server->port());
+        info.insert("state", state);
+        info.insert("online", server->state() == FriendServer::State::Running);
+        info.insert("serverRunning", server->isRunning());
+        info.insert("busy", server->state() == FriendServer::State::SettingUp || server->state() == FriendServer::State::Starting ||
+                                server->state() == FriendServer::State::Stopping);
+        info.insert("ready", server->state() != FriendServer::State::NotSetUp && server->state() != FriendServer::State::SettingUp);
+        result.append(info);
+    }
+    return result;
+}
+
+void Backend::startServer(const QString& id)
+{
+    auto* instance = instanceById(id);
+    if (!instance)
+        return;
+    auto* server = WraithServer::FriendServer::forInstance(instance);
+    if (!server->eulaAccepted()) {
+        // the EULA is accepted on the server's own page, never implicitly
+        openInstance(id, "friend");
+        m_shell->toast(tr("Accept the Minecraft EULA to start the server."), "warning");
+        return;
+    }
+    server->start();
+}
+
+void Backend::stopServer(const QString& id)
+{
+    if (auto* instance = instanceById(id))
+        WraithServer::FriendServer::forInstance(instance)->stop();
+}
+
+void Backend::newServer(const QString& id)
+{
+    openInstance(id, "friend");
 }
 
 void Backend::newInstance(const QString& group)

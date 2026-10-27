@@ -1108,8 +1108,6 @@ SET(LAUNCHER_SOURCES
     ui/dialogs/NewComponentDialog.h
     ui/dialogs/NewInstanceDialog.cpp
     ui/dialogs/NewInstanceDialog.h
-    ui/dialogs/FriendServersDialog.cpp
-    ui/dialogs/FriendServersDialog.h
     ui/dialogs/NewsDialog.cpp
     ui/dialogs/NewsDialog.h
     ui/pagedialog/PageDialog.cpp
