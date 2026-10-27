@@ -471,6 +471,10 @@ set(API_SOURCES
     modplatform/ModIndex.h
     modplatform/ModIndex.cpp
 
+    # Wraith: friend server support
+    server/ServerModFilter.h
+    server/ServerModFilter.cpp
+
     # Wraith: unified modpack search
     modplatform/unified/UnifiedPack.h
     modplatform/unified/UnifiedPack.cpp

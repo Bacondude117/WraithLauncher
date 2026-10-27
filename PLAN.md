@@ -41,7 +41,7 @@ Each step is small, builds cleanly (`wraith\build-windows.cmd build`), passes te
       (rounded hover/selection backgrounds, more padding). Existing behaviour unchanged elsewhere.
 
 ## Phase 4 — Goal 3: Friend server dashboard
-- [ ] 4.1 Logic `launcher/server/ClientOnlyFilter.{h,cpp}`: classify mods via packwiz `.index` side metadata
+- [x] 4.1 Logic `launcher/server/ClientOnlyFilter.{h,cpp}`: classify mods via packwiz `.index` side metadata
       (from Modrinth client_side/server_side) + a small built-in list of well-known client-only mod ids. Tests.
 - [ ] 4.2 `ServerSetupTask`: create `<instance>/server/`, copy server-safe mods/config, download the vanilla
       server jar for the instance's Minecraft version from Mojang's manifest; loader support via installers
