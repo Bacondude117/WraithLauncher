@@ -64,14 +64,24 @@ Section "Visual Studio Runtime"
     ${Else}
         StrCpy $vc_redist_exe "vc_redist.x64.exe"
     ${EndIf}
-    DetailPrint 'Downloading Microsoft Visual C++ Redistributable...'
-    NScurl::http GET "https://aka.ms/vs/17/release/$vc_redist_exe" "$INSTDIR\vc_redist\$vc_redist_exe" /INSIST /CANCEL /Zone.Identifier /END
-    Pop $0
-    ${If} $0 == "OK"
-        DetailPrint "Download successful"
-        ExecWait "$INSTDIR\vc_redist\$vc_redist_exe /install /passive /norestart"
+    ; Wraith: skip the download (and its admin prompt) when a new enough runtime is already installed
+    SetRegView 64
+    ReadRegDWORD $1 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Installed"
+    ReadRegDWORD $2 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Minor"
+    SetRegView lastused
+    ${If} $1 == 1
+    ${AndIf} $2 >= 44
+        DetailPrint "Microsoft Visual C++ Redistributable is already installed"
     ${Else}
-        DetailPrint "Download failed with error $0"
+        DetailPrint 'Downloading Microsoft Visual C++ Redistributable...'
+        NScurl::http GET "https://aka.ms/vs/17/release/$vc_redist_exe" "$INSTDIR\vc_redist\$vc_redist_exe" /INSIST /CANCEL /Zone.Identifier /END
+        Pop $0
+        ${If} $0 == "OK"
+            DetailPrint "Download successful"
+            ExecWait "$INSTDIR\vc_redist\$vc_redist_exe /install /passive /norestart"
+        ${Else}
+            DetailPrint "Download failed with error $0"
+        ${EndIf}
     ${EndIf}
 SectionEnd
 !endif

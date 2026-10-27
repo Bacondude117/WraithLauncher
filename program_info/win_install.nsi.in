@@ -1,6 +1,8 @@
 !include "FileFunc.nsh"
 !include "LogicLib.nsh"
 !include "MUI2.nsh"
+!include "StrFunc.nsh"
+${UnStrStr} ; Wraith: used by the uninstaller
 
 !include "x64.nsh"
 
@@ -376,7 +378,8 @@ Section "@Launcher_DisplayName@"
 
   File "@Launcher_APP_BINARY_NAME@.exe"
   File "@Launcher_APP_BINARY_NAME@_filelink.exe"
-  File "@Launcher_APP_BINARY_NAME@_updater.exe"
+  ; Wraith: the updater isn't built (no update server); the Qt Quick interface needs its QML imports (below)
+  File /nonfatal "@Launcher_APP_BINARY_NAME@_updater.exe"
   File "qt.conf"
   File "qtlogging.ini"
   File *.dll
@@ -384,19 +387,14 @@ Section "@Launcher_DisplayName@"
   File /r "imageformats"
   File /r "jars"
   File /r "platforms"
+  File /r "qml"
   File /r "styles"
   File /nonfatal /r "tls"
 
   ; Write the installation path into the registry
   WriteRegStr HKCU Software\@Launcher_CommonName@ "InstallDir" "$INSTDIR"
 
-  ; Write the URL Handler into registry for curseforge
-  WriteRegStr HKCU Software\Classes\curseforge "URL Protocol" ""
-  WriteRegStr HKCU Software\Classes\curseforge\shell\open\command "" '"$INSTDIR\@Launcher_APP_BINARY_NAME@.exe" "%1"'
-
-  ; Write the URL Handler into registry for modrinth
-  WriteRegStr HKCU Software\Classes\modrinth "URL Protocol" ""
-  WriteRegStr HKCU Software\Classes\modrinth\shell\open\command "" '"$INSTDIR\@Launcher_APP_BINARY_NAME@.exe" "%1"'
+  ; Wraith: curseforge:// and modrinth:// links are an opt-in section below, so other apps keep their links
 
   ; Write the URL Handler into registry for the launcher's own scheme
   ; (Wraith does not register prismlauncher:// so it never hijacks a real Prism install)
@@ -450,6 +448,16 @@ SectionEnd
 !define APPNAME "@Launcher_DisplayName@"
 !define APPCMDTEXT "@Launcher_DisplayName@"
 
+; Wraith: opt-in, because the CurseForge app, Modrinth App or Prism may already handle these links
+Section /o "Open curseforge:// and modrinth:// links with @Launcher_DisplayName@" URL_HANDLERS
+
+  WriteRegStr HKCU Software\Classes\curseforge "URL Protocol" ""
+  WriteRegStr HKCU Software\Classes\curseforge\shell\open\command "" '"$INSTDIR\@Launcher_APP_BINARY_NAME@.exe" "%1"'
+  WriteRegStr HKCU Software\Classes\modrinth "URL Protocol" ""
+  WriteRegStr HKCU Software\Classes\modrinth\shell\open\command "" '"$INSTDIR\@Launcher_APP_BINARY_NAME@.exe" "%1"'
+
+SectionEnd
+
 Section /o "Shell Association (Open-With dialog)" SHELL_ASSOC
 
   !insertmacro APP_SETUP `${APPDESCRIPTION}` `${APPICON}` `${APPID}` `${APPCMDTEXT}` `${APPEXE}` `${APPCMDTEXT}` '$INSTDIR\${APPEXE} -I "%1"'
@@ -471,11 +479,23 @@ Section "Uninstall"
 
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\@Launcher_CommonName@"
   DeleteRegKey HKCU SOFTWARE\@Launcher_CommonName@
+  DeleteRegKey HKCU Software\Classes\@Launcher_APP_BINARY_NAME@
+
+  ; Wraith: remove the link handlers only where they still point to this installation
+  ReadRegStr $0 HKCU Software\Classes\curseforge\shell\open\command ""
+  ${UnStrStr} $1 $0 "$INSTDIR"
+  StrCmp $1 "" +2
+    DeleteRegKey HKCU Software\Classes\curseforge
+  ReadRegStr $0 HKCU Software\Classes\modrinth\shell\open\command ""
+  ${UnStrStr} $1 $0 "$INSTDIR"
+  StrCmp $1 "" +2
+    DeleteRegKey HKCU Software\Classes\modrinth
 
   Delete $INSTDIR\@Launcher_APP_BINARY_NAME@.exe
   Delete $INSTDIR\@Launcher_APP_BINARY_NAME@_filelink.exe
   Delete $INSTDIR\@Launcher_APP_BINARY_NAME@_updater.exe
   Delete $INSTDIR\qt.conf
+  Delete $INSTDIR\qtlogging.ini
   Delete $INSTDIR\*.dll
 
   Delete $INSTDIR\uninstall.exe
@@ -484,6 +504,8 @@ Section "Uninstall"
   RMDir /r $INSTDIR\imageformats
   RMDir /r $INSTDIR\jars
   RMDir /r $INSTDIR\platforms
+  RMDir /r $INSTDIR\qml
+  RMDir /r $INSTDIR\qmltooling
   RMDir /r $INSTDIR\styles
   RMDir /r $INSTDIR\tls
 

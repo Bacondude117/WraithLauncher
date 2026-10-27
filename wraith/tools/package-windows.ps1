@@ -60,6 +60,34 @@ Set-Content (Join-Path $stage "portable.txt") "Wraith Launcher keeps its data in
 Compress-Archive -Path $stage -DestinationPath $portableZip
 Remove-Item (Join-Path $stage "portable.txt")
 
-$sums = foreach ($f in $zip, $portableZip) { "{0}  {1}" -f (Get-FileHash $f -Algorithm SHA256).Hash.ToLower(), (Split-Path $f -Leaf) }
+# Windows installer (NSIS), from program_info\win_install.nsi.in as configured into build-release\.
+# The script's paths are relative to the parent of the staged folder, so the icon and NSIS plugins go into dist\.
+$setup = Join-Path $dist "$name-Setup.exe"
+$makensis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe"
+if (Test-Path $makensis) {
+    # NScurl lets the installer fetch Microsoft's Visual C++ runtime; same pinned version and SHA-256 as Prism's CI
+    $plugins = Join-Path $dist "NSISPlugins"
+    if (-not (Test-Path (Join-Path $plugins "NScurl\Plugins"))) {
+        New-Item -ItemType Directory -Force $plugins | Out-Null
+        $nscurlZip = Join-Path $plugins "NScurl.zip"
+        Invoke-WebRequest "https://github.com/negrutiu/nsis-nscurl/releases/download/v24.9.26.122/NScurl.zip" -OutFile $nscurlZip
+        if ((Get-FileHash $nscurlZip -Algorithm SHA256).Hash -ne "AEE6C4BE3CB6455858E9C1EE4B3AFE0DB9960FA03FE99CCDEDC28390D57CCBB0") { throw "NScurl.zip checksum mismatch" }
+        Expand-Archive $nscurlZip -DestinationPath (Join-Path $plugins "NScurl") -Force
+    }
+    New-Item -ItemType Directory -Force (Join-Path $dist "program_info") | Out-Null
+    Copy-Item (Join-Path $root "program_info\wraithlauncher.ico") (Join-Path $dist "program_info\wraithlauncher.ico")
+    Push-Location $stage
+    & $makensis -NOCD (Join-Path $root "build-release\program_info\win_install.nsi")
+    $nsisExit = $LASTEXITCODE
+    Pop-Location
+    if ($nsisExit -ne 0) { throw "makensis failed" }
+    Remove-Item $setup -ErrorAction SilentlyContinue
+    Move-Item (Join-Path $dist "WraithLauncher-Setup.exe") $setup
+} else {
+    Write-Warning "NSIS isn't installed; skipping the .exe installer (winget install NSIS.NSIS)"
+    $setup = $null
+}
+
+$sums = foreach ($f in @($setup, $zip, $portableZip) | Where-Object { $_ }) { "{0}  {1}" -f (Get-FileHash $f -Algorithm SHA256).Hash.ToLower(), (Split-Path $f -Leaf) }
 $sums | Set-Content (Join-Path $dist "SHA256SUMS.txt") -Encoding ascii
 $sums
