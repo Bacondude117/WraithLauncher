@@ -72,6 +72,8 @@ Shell::Shell(MainWindow* window, QWidget* parent) : QWidget(parent), m_window(wi
     m_backend = new Backend(this, window);
     m_engine->rootContext()->setContextProperty("backend", m_backend);
     m_engine->rootContext()->setContextProperty("browseModel", new BrowseModel(this));
+    m_newInstance = new NewInstanceSheet(this);
+    m_engine->rootContext()->setContextProperty("newInstance", m_newInstance);
 
     auto* layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -193,7 +195,7 @@ void Shell::browse(const QString& query)
 
 void Shell::showNewInstance(const QString& group)
 {
-    NewInstanceSheet::show(this, group);
+    m_newInstance->open(group);
 }
 
 void Shell::showSettings(const QString& category)
@@ -335,8 +337,9 @@ static QImage captureWindow(QWidget* window)
 }
 
 // A tiny command runner used to drive the UI for screenshots: WRAITH_UI_SCRIPT=<file>, one command per line.
-//   nav <page> | instance <name> [tab] | call <page> <function> [argument] | size <w> <h> | wait <ms>
-//   shot <file.png> | toast <text> | quit
+//   nav <page> | instance <name>[|tab] | settings <category> | call <page> <function> [argument] | size <w> <h>
+//   newinstance [group] | newinstance-loader <loader> <mc> | newinstance-create <name>|<mc>|<loader>|<group>
+//   wait <ms> | shot <file.png> | toast <text> | dump | quit
 void Shell::runUiScript(const QString& path)
 {
     QFile file(path);
@@ -367,6 +370,12 @@ void Shell::runUiScript(const QString& path)
                 }
             } else if (command == "settings") {
                 showSettings(rest);
+            } else if (command == "newinstance") {
+                showNewInstance(rest);
+            } else if (command == "newinstance-loader") {
+                m_newInstance->selectLoader(rest.section(' ', 0, 0), rest.section(' ', 1, 1));
+            } else if (command == "newinstance-create") {
+                m_newInstance->create(rest.section('|', 0, 0), rest.section('|', 1, 1), rest.section('|', 2, 2), rest.section('|', 3, 3));
             } else if (command == "call") {
                 const QString pageName = rest.section(' ', 0, 0);
                 const QString function = rest.section(' ', 1, 1);

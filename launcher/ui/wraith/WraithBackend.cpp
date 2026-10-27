@@ -91,6 +91,12 @@ Backend::Backend(Shell* shell, MainWindow* window) : QObject(shell), m_shell(she
         bump();
     });
 
+    // a new or imported instance is announced with a way to open it
+    connect(list, &InstanceList::instanceSelectRequest, this, [this](const QString& id) {
+        if (auto* instance = instanceById(id))
+            m_shell->toast(tr("%1 is ready").arg(instance->name()), "success", tr("Open"), [this, id] { openInstance(id); });
+    });
+
     auto accounts = APPLICATION->accounts();
     connect(accounts, &AccountList::defaultAccountChanged, this, &Backend::accountChanged);
     connect(accounts, &AccountList::listChanged, this, &Backend::accountChanged);

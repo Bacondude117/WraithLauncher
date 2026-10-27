@@ -95,6 +95,7 @@ class MainWindow : public QMainWindow {
     void wraithShowInstance(MinecraftInstance* instance, const QString& page);
     void wraithShowSettings(const QString& page);
     void wraithLeavePage();
+    void wraithShowNewInstance();
    signals:
     void isClosing();
 

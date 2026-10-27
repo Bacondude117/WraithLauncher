@@ -924,6 +924,11 @@ void MainWindow::addInstance(const QString& url, const QMap<QString, QString>& e
 
 void MainWindow::on_actionAddInstance_triggered()
 {
+    // Wraith: Ctrl+N opens the shell's New instance sheet
+    if (m_wraithShell) {
+        wraithShowNewInstance();
+        return;
+    }
     addInstance();
 }
 

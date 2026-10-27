@@ -27,6 +27,7 @@
 #include <QQuickItem>
 #include <QQuickWidget>
 #include <QScrollArea>
+#include <QShortcut>
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
@@ -160,6 +161,9 @@ InstancePage::InstancePage(Shell* shell, MinecraftInstance* instance, QWidget* p
             managed->setInstanceWindow(nullptr);
 
     showTab("content");
+
+    // Esc goes back to the library
+    new QShortcut(QKeySequence(Qt::Key_Escape), this, this, [shell] { shell->showPage("library"); }, Qt::WidgetWithChildrenShortcut);
 
     // like Prism's console window: show the game log when the game starts, if the console setting asks for it
     connect(instance, &BaseInstance::runningStatusChanged, this, [this](bool running) {

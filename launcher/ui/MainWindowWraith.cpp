@@ -87,6 +87,11 @@ void MainWindow::wraithNewInstanceDialog(const QString& group, const QString& pa
         instanceFromInstanceTask(task);
 }
 
+void MainWindow::wraithShowNewInstance()
+{
+    m_wraithShell->showNewInstance();
+}
+
 void MainWindow::wraithLeavePage()
 {
     m_wraithShell->leaveCurrentPage();

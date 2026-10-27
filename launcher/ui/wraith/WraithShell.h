@@ -33,6 +33,7 @@ namespace Wraith {
 
 class Backend;
 class InstancePage;
+class NewInstanceSheet;
 class SettingsPage;
 
 /** A page of the shell that wants to know when it is shown or left (to apply settings, refresh, ...). */
@@ -86,6 +87,7 @@ class Shell : public QWidget {
     MainWindow* m_window;
     QQmlEngine* m_engine;
     Backend* m_backend;
+    NewInstanceSheet* m_newInstance;
     QQuickWidget* m_sidebar;
     QStackedWidget* m_stack;
     QHash<QString, QWidget*> m_pages;
