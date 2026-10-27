@@ -17,26 +17,58 @@
  */
 #pragma once
 
+#include <QHash>
 #include <QWidget>
 
 #include "WraithShell.h"
 
+class BasePage;
 class MinecraftInstance;
+class QQuickWidget;
+class QStackedWidget;
 
 namespace Wraith {
 
-/** Full-page view of one instance: header with Play, and tabs for content, worlds, logs, settings... */
+class PageHost;
+
+/**
+ * Full-page view of one instance: a header (cover, icon, name, badges, Play) with tabs. Content and Worlds have
+ * simple Wraith lists with the original pages one click away; the other tabs host the original pages directly.
+ */
 class InstancePage : public QWidget, public ShellPage {
     Q_OBJECT
    public:
     InstancePage(Shell* shell, MinecraftInstance* instance, QWidget* parent);
+    ~InstancePage() override;
 
-    void selectTab(const QString& tab);
+    /** A tab name ("content", "worlds", ...) or a Prism page id ("console", "mods", "version", ...). */
+    void selectTab(const QString& tabOrPage);
     void scriptCall(const QString& function, const QString& argument);
 
+    void pageShown() override;
+    bool pageLeaving() override;
+
+   private slots:
+    void onTabSelected(const QString& tab);
+    void onContentAction(const QString& action, const QString& pageId);
+
    private:
+    QWidget* buildContentTab(const QList<BasePage*>& pages);
+    QWidget* buildWorldsTab(BasePage* page);
+    QWidget* buildSettingsTab(const QList<BasePage*>& pages);
+    PageHost* hostTab(const QString& tab, const QList<BasePage*>& pages);
+    void showAdvanced(QStackedWidget* stack, PageHost* host, const QString& pageId);
+    void showTab(const QString& tab);
+    void refreshSettingsPage();
+
     Shell* m_shell;
     MinecraftInstance* m_instance;
+    QQuickWidget* m_header = nullptr;
+    QStackedWidget* m_tabs = nullptr;
+    QHash<QString, QWidget*> m_tabWidgets;
+    QHash<QString, PageHost*> m_hosts;  // by tab
+    QHash<QString, QStackedWidget*> m_simpleStacks;  // tabs with a simple view and an advanced view
+    QString m_tab;
 };
 
 }  // namespace Wraith

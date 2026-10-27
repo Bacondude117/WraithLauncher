@@ -58,6 +58,23 @@ void MainWindow::setupWraithShell()
     addActions({ ui->actionAddInstance, ui->actionSettings, ui->actionCloseWindow });
 }
 
+void MainWindow::wraithShowInstance(MinecraftInstance* instance, const QString& page)
+{
+    APPLICATION->showMainWindow();
+    m_wraithShell->showInstance(instance, page);
+}
+
+void MainWindow::wraithShowSettings(const QString& page)
+{
+    APPLICATION->showMainWindow();
+    m_wraithShell->showSettings(page);
+}
+
+void MainWindow::wraithLeavePage()
+{
+    m_wraithShell->leaveCurrentPage();
+}
+
 void MainWindow::wraithRenameInstance(MinecraftInstance* instance, const QString& name)
 {
     if (!instance)

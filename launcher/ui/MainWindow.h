@@ -94,6 +94,9 @@ class MainWindow : public QMainWindow {
     }
     void wraithInstallFromTask(InstanceTask* task) { instanceFromInstanceTask(task); }
     void wraithRenameInstance(MinecraftInstance* instance, const QString& name);
+    void wraithShowInstance(MinecraftInstance* instance, const QString& page);
+    void wraithShowSettings(const QString& page);
+    void wraithLeavePage();
    signals:
     void isClosing();
 

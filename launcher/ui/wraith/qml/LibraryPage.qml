@@ -60,7 +60,7 @@ Rectangle {
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 10
-                SearchField {
+                WSearchField {
                     id: search
                     width: Math.min(320, header.width * 0.3)
                     placeholderText: qsTr("Search instances")

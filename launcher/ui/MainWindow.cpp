@@ -1589,6 +1589,9 @@ void MainWindow::on_actionViewSelectedInstFolder_triggered()
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
+    // Wraith: save pending edits of the shell's visible page (instance or global settings)
+    if (m_wraithShell)
+        wraithLeavePage();
     // Save the window state and geometry.
     APPLICATION->settings()->set("MainWindowState", QString::fromUtf8(saveState().toBase64()));
     APPLICATION->settings()->set("MainWindowGeometry", QString::fromUtf8(saveGeometry().toBase64()));

@@ -830,6 +830,12 @@ SET(LAUNCHER_SOURCES
     ui/wraith/WraithInstanceModel.h
     ui/wraith/WraithInstancePage.cpp
     ui/wraith/WraithInstancePage.h
+    ui/wraith/WraithListModels.cpp
+    ui/wraith/WraithListModels.h
+    ui/wraith/WraithPageHost.cpp
+    ui/wraith/WraithPageHost.h
+    ui/wraith/WraithWidgets.cpp
+    ui/wraith/WraithWidgets.h
     ui/wraith/WraithNewInstance.cpp
     ui/wraith/WraithNewInstance.h
     ui/wraith/WraithSettingsPage.cpp

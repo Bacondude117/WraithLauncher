@@ -1683,6 +1683,11 @@ void Application::ShowGlobalSettings(class QWidget* parent, QString openPage)
     if (!m_globalSettingsProvider) {
         return;
     }
+    // Wraith: settings are a page of the shell (it emits globalSettingsAboutToOpen/globalSettingsApplied itself)
+    if (m_mainWindow && m_mainWindow->wraithShellActive() && m_mainWindow->isVisible()) {
+        m_mainWindow->wraithShowSettings(openPage);
+        return;
+    }
     emit globalSettingsAboutToOpen();
     {
         SettingsObject::Lock lock(APPLICATION->settings());
@@ -1734,6 +1739,12 @@ ViewLogWindow* Application::showLogWindow()
 InstanceWindow* Application::showInstanceWindow(MinecraftInstance* instance, const QString& page)
 {
     if (!instance) {
+        return nullptr;
+    }
+    // Wraith: instances open as a page of the shell; while the launcher is hidden (e.g. "hide the launcher when the
+    // game starts" with the console enabled) the classic console window is still used so the console stays visible
+    if (m_mainWindow && m_mainWindow->wraithShellActive() && m_mainWindow->isVisible()) {
+        m_mainWindow->wraithShowInstance(instance, page);
         return nullptr;
     }
     auto id = instance->id();
