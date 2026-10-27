@@ -100,6 +100,8 @@ class FriendServer : public QObject {
     void downloadVanilla();
     void downloadFabric();
     void runForgeInstaller();
+    void runQuiltInstaller();
+    void runInstaller(const QString& url, const QStringList& installerArgs);
     void copyFiles();
     void finishSetup();
     void fetchJson(const QString& url, std::function<void(const QByteArray&)> onSuccess);

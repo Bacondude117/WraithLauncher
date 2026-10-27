@@ -24,9 +24,12 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 
 #include "Application.h"
 #include "FileSystem.h"
+#include "java/JavaUtils.h"
+#include "minecraft/LaunchProfile.h"
 #include "minecraft/MinecraftInstance.h"
 #include "minecraft/PackProfile.h"
 #include "net/ApiRequest.h"
@@ -153,8 +156,6 @@ QString FriendServer::unsupportedReason() const
 {
     if (minecraftVersion().isEmpty())
         return tr("This instance has no Minecraft version.");
-    if (loader() == Loader::Quilt)
-        return tr("Quilt servers aren't supported yet. Fabric, Forge, NeoForge and vanilla instances are.");
     return {};
 }
 
@@ -239,13 +240,65 @@ void FriendServer::setState(State state)
     emit stateChanged();
 }
 
+namespace {
+/** Major version of a Java install, read from <home>/release (JAVA_VERSION="17.0.2" / "1.8.0_392"); 0 if unknown. */
+int javaMajor(const QString& javaExe)
+{
+    QFile release(QFileInfo(javaExe).dir().filePath("../release"));
+    if (!release.open(QIODevice::ReadOnly | QIODevice::Text))
+        return 0;
+    static const QRegularExpression s_version(R"re(JAVA_VERSION="(\d+)(?:\.(\d+))?)re");
+    const auto match = s_version.match(QString::fromUtf8(release.readAll()));
+    if (!match.hasMatch())
+        return 0;
+    const int first = match.captured(1).toInt();
+    return first == 1 ? match.captured(2).toInt() : first;
+}
+
+/** Prefer java(.exe) over javaw(.exe) so the server writes to a normal console stream. */
+QString consoleJava(const QString& javaExe)
+{
+    QFileInfo info(javaExe);
+    if (info.baseName() == "javaw") {
+        const QString java = info.dir().filePath(QString("java") + (info.suffix().isEmpty() ? "" : "." + info.suffix()));
+        if (QFile::exists(java))
+            return java;
+    }
+    return javaExe;
+}
+}  // namespace
+
 QString FriendServer::javaPath() const
 {
     // Same resolution as the instance launch ($INST_JAVA): relative paths are relative to the data dir.
     const QString path = m_instance->settings()->get("JavaPath").toString();
-    if (path.isEmpty())
-        return "java";
-    return QDir(path).absolutePath();
+    if (!path.isEmpty())
+        return consoleJava(QDir(path).absolutePath());
+
+    // The instance was never launched (no Java picked yet): find an installed Java that suits this version.
+    QList<int> wanted;
+    if (auto profile = m_instance->getPackProfile()->getProfile())
+        wanted = profile->getCompatibleJavaMajors();
+    QStringList candidates = JavaUtils().FindJavaPaths();
+    // Java runtimes the launcher downloaded itself (<data>/java/<runtime>/bin/java)
+    QDirIterator managed(APPLICATION->javaPath(), { "java", "java.exe" }, QDir::Files, QDirIterator::Subdirectories);
+    while (managed.hasNext())
+        candidates.append(managed.next());
+
+    QString best;
+    int bestMajor = -1;
+    for (const auto& candidate : candidates) {
+        if (!QFile::exists(candidate))
+            continue;
+        const int major = javaMajor(candidate);
+        // exact match with what this Minecraft version asks for wins, otherwise the newest Java 17+
+        const int score = wanted.contains(major) ? 1000 + major : (major >= 17 ? major : major - 100);
+        if (score > bestMajor) {
+            bestMajor = score;
+            best = candidate;
+        }
+    }
+    return best.isEmpty() ? QString("java") : consoleJava(best);
 }
 
 QStringList FriendServer::launchArguments() const
@@ -260,6 +313,9 @@ QStringList FriendServer::launchArguments() const
     QDirIterator it(dir.filePath("libraries"), { argsName }, QDir::Files, QDirIterator::Subdirectories);
     if (it.hasNext())
         return { "@" + dir.relativeFilePath(it.next()) };
+    // Quilt installs its launcher next to the vanilla server.jar; the launcher must win.
+    if (dir.exists("quilt-server-launch.jar"))
+        return { "-jar", "quilt-server-launch.jar" };
     if (dir.exists("server.jar"))
         return { "-jar", "server.jar" };
     // Older Forge: a forge-<version>.jar (not the installer) next to the libraries
@@ -321,6 +377,9 @@ void FriendServer::setup(bool eulaAccepted)
         case Loader::NeoForge:
             runForgeInstaller();
             break;
+        case Loader::Quilt:
+            runQuiltInstaller();
+            break;
         default:
             downloadVanilla();
             break;
@@ -377,9 +436,29 @@ void FriendServer::runForgeInstaller()
     } else {
         url = QString("https://maven.minecraftforge.net/net/minecraftforge/forge/%1-%2/forge-%1-%2-installer.jar").arg(mc, version);
     }
+    runInstaller(url, { "--installServer" });
+}
+
+void FriendServer::runQuiltInstaller()
+{
+    // The Quilt installer sets up quilt-server-launch.jar and (with --download-server) the vanilla server.jar.
+    fetchJson("https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-installer/maven-metadata.xml", [this](const QByteArray& data) {
+        static const QRegularExpression s_release("<release>([^<]+)</release>");
+        const auto match = s_release.match(QString::fromUtf8(data));
+        if (!match.hasMatch())
+            return fail(tr("couldn't find a Quilt installer version"));
+        const QString installer = match.captured(1);
+        const QString url =
+            QString("https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-installer/%1/quilt-installer-%1.jar").arg(installer);
+        runInstaller(url, { "install", "server", minecraftVersion(), loaderVersion(), "--download-server", "--install-dir=." });
+    });
+}
+
+void FriendServer::runInstaller(const QString& url, const QStringList& installerArgs)
+{
     const QString installerPath = FS::PathCombine(serverDir(), "installer.jar");
-    downloadFile(url, installerPath, [this, installerPath] {
-        log(tr("[Wraith] Running the %1 installer (this can take a few minutes)...").arg(loaderName(loader())));
+    downloadFile(url, installerPath, [this, installerPath, installerArgs] {
+        log(tr("[Wraith] Running the %1 installer with %2 (this can take a few minutes)...").arg(loaderName(loader()), javaPath()));
         auto* installer = new QProcess(this);
         installer->setWorkingDirectory(serverDir());
         installer->setProcessChannelMode(QProcess::MergedChannels);
@@ -396,7 +475,7 @@ void FriendServer::runForgeInstaller()
             copyFiles();
         });
         connect(installer, &QProcess::errorOccurred, this, [this](QProcess::ProcessError) { fail(tr("couldn't run Java at %1").arg(javaPath())); });
-        installer->start(javaPath(), { "-jar", "installer.jar", "--installServer" });
+        installer->start(javaPath(), QStringList{ "-jar", "installer.jar" } + installerArgs);
     });
 }
 
