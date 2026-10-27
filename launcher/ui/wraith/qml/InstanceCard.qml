@@ -13,6 +13,11 @@ Item {
     property string playTimeText
     property bool running: false
     property bool keyboardFocus: false  // the library's keyboard cursor is on this card
+    property bool selecting: false      // bulk selection mode
+    property bool selected: false
+    property var tags: []
+    property string updateAvailable: ""
+    signal toggled()
 
     implicitWidth: 216
     implicitHeight: 252
@@ -139,8 +144,32 @@ Item {
         onClicked: (event) => {
             if (event.button === Qt.RightButton)
                 backend.showInstanceMenu(root.instanceId)
+            else if (root.selecting || (event.modifiers & Qt.ControlModifier))
+                root.toggled()
             else
                 backend.openInstance(root.instanceId)
+        }
+    }
+
+    // bulk selection (Library "Select" mode, or Ctrl+click)
+    Rectangle {
+        visible: root.selecting || root.selected
+        anchors { left: parent.left; top: parent.top; margins: 10 }
+        width: 24; height: 24; radius: 7
+        color: root.selected ? Theme.accent : Theme.withAlpha(Theme.bg, 0.7)
+        border.width: root.selected ? 0 : 1
+        border.color: Theme.borderStrong
+        Icon { anchors.centerIn: parent; visible: root.selected; name: "check"; size: 15; color: Theme.accentText }
+    }
+    // tags and "update available"
+    Row {
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 12 }
+        layoutDirection: Qt.RightToLeft
+        spacing: 4
+        Badge { visible: root.updateAvailable.length > 0; text: qsTr("Update"); tint: Theme.success; solid: true }
+        Repeater {
+            model: root.tags.slice(0, 2)
+            delegate: Badge { required property string modelData; text: "#" + modelData; tint: Theme.violet }
         }
     }
 }

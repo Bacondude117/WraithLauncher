@@ -238,7 +238,7 @@ Rectangle {
                 QuickAction {
                     Layout.fillWidth: true
                     icon: "import"; tint: Theme.warning; title: qsTr("Import"); subtitle: qsTr("Zip, .mrpack or CurseForge pack")
-                    onClicked: backend.importInstance()
+                    onClicked: backend.showImportMenu()
                 }
                 QuickAction {
                     Layout.fillWidth: true

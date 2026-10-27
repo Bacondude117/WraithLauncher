@@ -23,6 +23,7 @@ service. Nothing identifies you to Wraith, because there is no Wraith service to
 | Before launching a game | `meta.prismlauncher.org` | New Minecraft/loader versions | Settings → Privacy & security → Refresh version metadata when launching |
 | Opening Browse | Every switched-on modpack source (below) | The "popular modpacks" list | Settings → Privacy & security → List popular modpacks when Browse opens; and the Sources checkboxes in Browse (a source that is switched off is never contacted) |
 | Creating or launching an instance whose files are missing | Mojang, `meta.prismlauncher.org`, loader Mavens (below) | Downloading the game, libraries and assets | Inherent to playing; "Download game files when creating an instance" (Settings → General) only moves it to the first launch |
+| Start and every 6 hours, **only if you turn it on** | `api.modrinth.com` (`/project/<id>/version`), `api.curseforge.com` (`/mods/<id>/files`) for your modpack instances | Modpack update notifications | Off by default: Settings → Privacy & security → Tell me about modpack updates |
 | Launching with automatic Java on | Java vendors via `meta.prismlauncher.org` | Installing a matching Java | Settings → Java & memory → Download Java automatically |
 
 There is no update check: the updater is disabled in this fork, and there is no news feed.

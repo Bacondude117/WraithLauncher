@@ -175,3 +175,13 @@ newest toast's button, and run whatever a key sequence is bound to (`key Ctrl+G`
 | Export to .mrpack and CurseForge with a pre-export checklist (mod problems, mods without download info and licences, disabled mods, personal files, large files, release snapshot) | Creator → Export | Verified (checklist); the export dialog itself is Prism's (Verified in §3) |
 | Config diff between snapshots, line by line | Creator → Config diff | Verified |
 | Test launch (snapshot, play, then a summary of what changed with a way to roll back) | Creator → Test launch | Moved (needs an account to launch) |
+| **C. JVM/GC presets** with explanations (tuned G1, generational ZGC, Shenandoah, low memory); asks before replacing your own arguments; warns when the Java is too old | Instance → Settings → Performance | Verified (card; presets unit-tested) |
+| Memory recommendation from mod count, Minecraft version and RAM, with a one-click "Use" and warnings | Instance → Settings → Performance | Verified |
+| Better log viewer: every log and crash report, level filters with counts, search, next error, copy, live latest.log; Prism's console under "Live console" | Instance → **Logs** | Verified |
+| Crash analyzer: wrong Java, out of memory, missing dependencies (Fabric/Quilt/Forge), duplicates, mixin failures naming the mod, missing classes, graphics drivers, stack overflows, the suspected mod | Logs (crash card); crash toast | Verified (crash report card; 6 cause tests) |
+| Optional shared folders (resource packs, shader packs, screenshots, schematics) through junctions; never overwrites | Instance → Settings → Shared with other instances | Verified (unit test with real junctions); the switches: Moved |
+| Instance tags and bulk actions (tag, group, snapshot, delete with one confirmation and Undo) | Library: Select / Ctrl+click, tag filter, ⋯ → Tags... | Verified (tags, selection, bulk bar); bulk delete: Moved |
+| **D. Import from other launchers** (Prism, PolyMC, CurseForge, Modrinth App, ATLauncher, GDLauncher, official launcher), copied, read-only | Library/Home → Import → From another launcher | Verified (scan of this PC's launchers; scanners unit-tested); the copy itself: Moved |
+| Optional modpack update notifications (off by default; Modrinth and CurseForge packs) with a library badge | Settings → Privacy & security | Moved (needs a managed pack with a newer version) |
+| Screenshot gallery across all instances, with preview, open, copy, show in folder, delete (confirmed) | Library → screenshots button | Verified |
+| Friendly crash messages with rollback | Toast "X crashed: <cause>" → Logs crash card → Roll back to a snapshot | Card Verified; the toast needs a real crash: Moved |

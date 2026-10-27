@@ -79,3 +79,9 @@ Each new feature was designed against the values above:
 - **Crash analyzer, dependency checker, memory and GC advice:** suggestions with explanations, never applied
   automatically.
 - **Update notifications:** off by default, and they only report.
+- **Import from other launchers:** only reads other launchers' folders and copies instances. It never copies account
+  files (`launcher_accounts*.json`, `launcher_profiles.json`).
+- **Shared folders:** opt-in per folder, never overwrites, and unsharing gives the instance a copy. Worlds can't be
+  shared. Snapshots skip linked folders, so a restore never touches files other instances use.
+- **JVM presets:** applied only when picked, and asks before replacing arguments you wrote yourself.
+- **Crash analyzer and log viewer:** run locally; the suggestions link to settings and snapshots and change nothing.

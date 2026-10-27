@@ -192,6 +192,22 @@ needs no prompts during a rebuild.
 - **Test launch** = snapshot, then a normal launch. When the game exits, a toast reports how many files changed, with
   a link to Snapshots for a reviewed rollback. Nothing is rolled back automatically.
 
+## D26 — Advanced tools and player comforts
+- **Shared folders use directory junctions on Windows** (via `mklink /J`), because symlinks need admin rights or
+  Developer Mode (see the FileSystem test's UAC loop). Elsewhere they are symlinks.
+- **Log viewer reads files from disk** (latest.log is watched), so it covers older logs and crash reports too. Prism's
+  live console stays one click away for the running game's output.
+- **Crash analysis is pattern matching on known causes**, ordered most specific first, and never auto-applies a fix.
+  A crash toast leads to the log viewer, where rollback means opening the Snapshots restore preview.
+- **Import copies, never moves.** Prism-format instances are copied as they are. Others become a new instance with the
+  same Minecraft version and loader, and their game files are copied in (account and launcher files excluded). Newer
+  Modrinth App versions keep the Minecraft version in a SQLite database, which isn't read, so those profiles are listed
+  but can't be imported.
+- **Update notifications cover Modrinth and CurseForge modpacks only**, because Prism records managed-pack metadata only
+  for those. Packs from other sources are not checked; they get the same feature as soon as their metadata exists.
+- **The screenshot gallery is a page off the Library** (no new sidebar entry), to keep the requested sidebar
+  (Home, Library, Browse, Servers, Settings).
+
 ## D13 — Card styling is opt-in per theme
 Card painting in the instance grid and the Welcome overlay is gated on `WraithTheme::isActive()`, so every other
 theme renders exactly as in Prism, and no existing option or setting was removed.

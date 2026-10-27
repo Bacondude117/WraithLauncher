@@ -55,6 +55,8 @@
 #include "WraithBrowse.h"
 #include "WraithInstancePage.h"
 #include "WraithNewInstance.h"
+#include "WraithExtras.h"
+#include "WraithLogs.h"
 #include "WraithSettingsPage.h"
 #include "WraithSnapshots.h"
 #include "WraithStyle.h"
@@ -90,6 +92,11 @@ Shell::Shell(MainWindow* window, QWidget* parent) : QWidget(parent), m_window(wi
     m_newInstance = new NewInstanceSheet(this);
     m_engine->rootContext()->setContextProperty("newInstance", m_newInstance);
     SnapshotService::install(this);  // automatic snapshots before mod/modpack/loader/version changes
+    CrashWatcher::install(this);     // plain-language crash toasts that lead to the log viewer
+    // the import and gallery pages scan only when opened
+    m_engine->rootContext()->setContextProperty("importModel", new ImportModel(this));
+    m_engine->rootContext()->setContextProperty("galleryModel", new GalleryModel(this));
+    m_engine->rootContext()->setContextProperty("updateNotifier", new UpdateNotifier(this));  // does nothing unless switched on
 
     auto* layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -138,6 +145,10 @@ QWidget* Shell::page(const QString& name)
         created = createQuick("ServersPage.qml", m_stack);
     else if (name == "settings")
         created = new SettingsPage(this, m_stack);
+    else if (name == "import")
+        created = createQuick("ImportPage.qml", m_stack);
+    else if (name == "gallery")
+        created = createQuick("GalleryPage.qml", m_stack);
     if (!created)
         return nullptr;
     m_stack->addWidget(created);

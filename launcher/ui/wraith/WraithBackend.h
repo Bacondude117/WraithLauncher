@@ -93,6 +93,14 @@ class Backend : public QObject {
     Q_INVOKABLE void changeGroup(const QString& id);
     Q_INVOKABLE void duplicate(const QString& id);
     Q_INVOKABLE void remove(const QString& id);
+    Q_INVOKABLE void editTags(const QString& id);
+
+    // bulk actions on several instances (Library "Select")
+    Q_INVOKABLE void bulkTag(const QVariantList& ids);
+    Q_INVOKABLE void bulkGroup(const QVariantList& ids);
+    Q_INVOKABLE void bulkSnapshot(const QVariantList& ids);
+    /** Asks once (listing every instance), then moves them to the trash with one Undo. true when done. */
+    Q_INVOKABLE bool bulkDelete(const QVariantList& ids);
     Q_INVOKABLE void showInstanceMenu(const QString& id);
     Q_INVOKABLE void showLaunchMenu(const QString& id);
     Q_INVOKABLE void showGroupMenu(const QString& group);
@@ -108,6 +116,8 @@ class Backend : public QObject {
     Q_INVOKABLE void newInstance(const QString& group = QString());
     Q_INVOKABLE void advancedNewInstance(const QString& pageId = QString());
     Q_INVOKABLE void importInstance();
+    /** "From a file..." / "From another launcher..." */
+    Q_INVOKABLE void showImportMenu();
     Q_INVOKABLE void showAccountMenu();
     Q_INVOKABLE void showMoreMenu();
     Q_INVOKABLE void toast(const QString& text, const QString& kind = QString());

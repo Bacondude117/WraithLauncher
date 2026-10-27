@@ -31,6 +31,7 @@ set(TEST_SOURCES
     WraithValues_test.cpp
     Snapshot_test.cpp
     ModCheck_test.cpp
+    WraithAdvanced_test.cpp
 )
 
 # NOTE(@getchoo): Very funny way of aliasing the Qt generated `main` test functions to respective filenames

@@ -26,7 +26,7 @@ namespace Wraith::Advanced {
 
 LogLevel lineLevel(const QString& line, LogLevel previous)
 {
-    static const QRegularExpression s_bracket(R"(^\[[^\]]*[/ ](TRACE|DEBUG|INFO|WARN|WARNING|ERROR|FATAL|SEVERE)\])");
+    static const QRegularExpression s_bracket(R"(^(?:\[[^\]]*\]\s*)?\[[^\]]*[/ ](TRACE|DEBUG|INFO|WARN|WARNING|ERROR|FATAL|SEVERE)\])");
     static const QRegularExpression s_plain(R"(^\[?\d{2}:\d{2}:\d{2}\]?\s*\[?(TRACE|DEBUG|INFO|WARN|WARNING|ERROR|FATAL|SEVERE)\]?)");
     QRegularExpressionMatch m = s_bracket.match(line);
     if (!m.hasMatch())

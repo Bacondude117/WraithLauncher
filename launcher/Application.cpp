@@ -668,6 +668,7 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         m_settings->registerSetting("WraithSnapshotsAuto", true);           // snapshot before mod/modpack/loader/version changes
         m_settings->registerSetting("WraithSnapshotRingSize", 10);          // unpinned snapshots kept per instance (0 = all)
         m_settings->registerSetting("WraithSnapshotIncludeWorlds", false);  // automatic snapshots include saves/
+        m_settings->registerSetting("WraithUpdateNotifications", false);    // check modpack instances for new versions (opt-in)
 
         m_settings->registerSetting("NumberOfConcurrentTasks", 10);
         m_settings->registerSetting("NumberOfConcurrentDownloads", 6);

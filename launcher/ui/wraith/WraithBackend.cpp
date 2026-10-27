@@ -46,8 +46,11 @@
 #include "ui/MainWindow.h"
 #include "ui/themes/ThemeManager.h"
 
+#include <QMessageBox>
+
 #include "WraithInstanceModel.h"
 #include "WraithShell.h"
+#include "WraithSnapshots.h"
 #include "WraithStyle.h"
 
 namespace Wraith {
@@ -388,6 +391,123 @@ void Backend::remove(const QString& id)
         m_shell->toast(tr("Deleted \"%1\"").arg(name));
 }
 
+void Backend::editTags(const QString& id)
+{
+    auto* instance = instanceById(id);
+    if (!instance)
+        return;
+    bool ok = false;
+    const QString text = QInputDialog::getText(m_shell, tr("Tags"), tr("Tags for %1, separated by commas:").arg(instance->name()),
+                                               QLineEdit::Normal, instanceTags(instance).join(", "), &ok);
+    if (!ok)
+        return;
+    setInstanceTags(instance, text.split(',', Qt::SkipEmptyParts));
+    m_instances->tagsChanged();
+}
+
+void Backend::bulkTag(const QVariantList& ids)
+{
+    bool ok = false;
+    const QString text = QInputDialog::getText(m_shell, tr("Tag instances"),
+                                               tr("Tags to add to %n instance(s), separated by commas.\nPut a minus in front to remove a tag "
+                                                  "(e.g. -old).",
+                                                  "", static_cast<int>(ids.size())),
+                                               QLineEdit::Normal, QString(), &ok);
+    if (!ok || text.trimmed().isEmpty())
+        return;
+    for (const auto& v : ids) {
+        auto* instance = instanceById(v.toString());
+        if (!instance)
+            continue;
+        QStringList tags = instanceTags(instance);
+        for (QString tag : text.split(',', Qt::SkipEmptyParts)) {
+            tag = tag.trimmed();
+            if (tag.startsWith('-'))
+                tags.removeIf([&tag](const QString& t) { return t.compare(tag.mid(1).trimmed(), Qt::CaseInsensitive) == 0; });
+            else
+                tags.append(tag);
+        }
+        setInstanceTags(instance, tags);
+    }
+    m_instances->tagsChanged();
+    m_shell->toast(tr("Tags updated on %n instance(s)", "", static_cast<int>(ids.size())), "success");
+}
+
+void Backend::bulkGroup(const QVariantList& ids)
+{
+    bool ok = false;
+    const QString group = QInputDialog::getItem(m_shell, tr("Move to group"), tr("Group for %n instance(s) (empty for none):", "",
+                                                                                  static_cast<int>(ids.size())),
+                                                QStringList{ QString() } + groups(), 0, true, &ok);
+    if (!ok)
+        return;
+    for (const auto& v : ids)
+        APPLICATION->instances()->setInstanceGroup(v.toString(), group.trimmed());
+    m_shell->toast(tr("Moved %n instance(s)", "", static_cast<int>(ids.size())), "success");
+}
+
+void Backend::bulkSnapshot(const QVariantList& ids)
+{
+    int taken = 0;
+    for (const auto& v : ids) {
+        auto* instance = instanceById(v.toString());
+        if (!instance)
+            continue;
+        Snapshots::Options options;
+        options.trigger = tr("Manual");
+        options.label = tr("Bulk snapshot");
+        if (SnapshotService::takeBlocking(instance, options, m_shell)) {
+            SnapshotService::storeFor(instance).prune(SnapshotService::ringSize());
+            taken++;
+        }
+    }
+    m_shell->toast(tr("Snapshot saved for %n instance(s)", "", taken), taken == ids.size() ? "success" : "warning");
+}
+
+bool Backend::bulkDelete(const QVariantList& ids)
+{
+    QStringList names;
+    QStringList deletable;
+    for (const auto& v : ids) {
+        auto* instance = instanceById(v.toString());
+        if (!instance)
+            continue;
+        if (instance->isRunning()) {
+            m_shell->toast(tr("%1 is running; close it first.").arg(instance->name()), "warning");
+            return false;
+        }
+        names.append(instance->name());
+        deletable.append(instance->id());
+    }
+    if (deletable.isEmpty())
+        return false;
+    const auto answer = QMessageBox::warning(m_shell, tr("Delete instances"),
+                                             tr("Delete these %n instance(s)?\n\n%1\n\nThey go to the trash, so this can be undone.", "",
+                                                static_cast<int>(names.size()))
+                                                 .arg(names.join('\n')),
+                                             QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if (answer != QMessageBox::Yes)
+        return false;
+    int trashed = 0;
+    for (const auto& id : deletable) {
+        if (APPLICATION->instances()->trashInstance(id))
+            trashed++;
+        else
+            APPLICATION->instances()->deleteInstance(id);
+    }
+    auto* undo = action("actionUndoTrashInstance");
+    if (undo)
+        undo->setEnabled(APPLICATION->instances()->trashedSomething());
+    if (trashed > 0 && undo)
+        m_shell->toast(tr("Moved %n instance(s) to the trash", "", trashed), "info", tr("Undo"), [undo, trashed] {
+            for (int i = 0; i < trashed && undo->isEnabled(); i++)
+                undo->trigger();
+        });
+    else
+        m_shell->toast(tr("Deleted %n instance(s)", "", static_cast<int>(deletable.size())));
+    return true;
+}
+
 void Backend::popup(QMenu* menu)
 {
     menu->setAttribute(Qt::WA_DeleteOnClose);
@@ -411,6 +531,7 @@ void Backend::showInstanceMenu(const QString& id)
     menu->addAction(tr("Rename..."), this, [this, id] { rename(id); });
     menu->addAction(tr("Change icon..."), this, [this, id] { changeIcon(id); });
     menu->addAction(tr("Change group..."), this, [this, id] { changeGroup(id); });
+    menu->addAction(tr("Tags..."), this, [this, id] { editTags(id); });
     menu->addSeparator();
     menu->addAction(tr("Duplicate..."), this, [this, id] { duplicate(id); });
     if (auto* exportMenu = action("actionExportInstance")->menu())
@@ -559,6 +680,14 @@ void Backend::newInstance(const QString& group)
 void Backend::advancedNewInstance(const QString& pageId)
 {
     m_window->wraithNewInstanceDialog({}, pageId);
+}
+
+void Backend::showImportMenu()
+{
+    auto* menu = new QMenu(m_shell);
+    menu->addAction(tr("From a file or link..."), this, [this] { importInstance(); });
+    menu->addAction(tr("From another launcher..."), this, [this] { navigate("import"); });
+    popup(menu);
 }
 
 void Backend::importInstance()

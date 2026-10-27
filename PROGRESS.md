@@ -74,6 +74,16 @@ Resume from the first unchecked step in PLAN.md.
   - Step 3B, modpack creator tools: `launcher/creator/` (ModCheck, TextDiff; 6 unit tests) and the instance Creator
     tab (health check, export checklist, changelog, config diff, test launch, pins), plus pin icons in Content.
     Verified: the health check on a real 16-mod pack, the export checklist, the changelog and the config diff.
+  - Step 3C, advanced user tools:
+    - Built: `launcher/advanced/` (JVM presets and memory advice, crash analyzer, shared folders; tests in
+      WraithAdvanced_test), the instance Settings Performance and Shared cards, the Logs tab log viewer with crash
+      cards, crash toasts, and library tags and bulk actions.
+  - Step 3D, player comforts: import from other launchers (scanner, ForeignImportTask, Import page), opt-in modpack
+    update notifications, and the screenshot gallery.
+  - Verified: 28/28 tests; screenshots 33–38 (settings cards, crash explanation, log viewer, tags and bulk bar,
+    gallery, an import scan of this PC's launchers).
+  - Not verified (needs a game launch, account or real crash): test launch, the crash toast, update notifications
+    with a real newer version, and copying an imported instance.
 
 ## Next
 - Follow-ups are in SUMMARY.md under "Unfinished and risky": a real game launch and server start (both need an

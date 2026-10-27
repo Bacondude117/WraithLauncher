@@ -34,6 +34,11 @@ bool isLink(const QFileInfo& info)
     return info.isSymLink() || info.isJunction();
 }
 
+QString linkTarget(const QFileInfo& info)
+{
+    return QDir::cleanPath(info.isJunction() ? info.junctionTarget() : info.symLinkTarget());
+}
+
 bool makeLink(const QString& link, const QString& target)
 {
 #ifdef Q_OS_WIN
@@ -67,7 +72,7 @@ bool isShared(const QString& gameRoot, const QString& folder, const QString& sha
     const QFileInfo info(QDir(gameRoot).filePath(folder));
     if (!isLink(info))
         return false;
-    return QDir::cleanPath(info.canonicalFilePath()).startsWith(QDir::cleanPath(QFileInfo(sharedRoot).canonicalFilePath()), Qt::CaseInsensitive);
+    return linkTarget(info).startsWith(QDir::cleanPath(QFileInfo(sharedRoot).absoluteFilePath()), Qt::CaseInsensitive);
 }
 
 Result<QString> share(const QString& gameRoot, const QString& folder, const QString& sharedRoot)
@@ -118,7 +123,7 @@ Result<> unshare(const QString& gameRoot, const QString& folder)
     const QFileInfo info(link);
     if (!isLink(info))
         return {};
-    const QString target = info.canonicalFilePath();
+    const QString target = linkTarget(info);
     if (!removeLink(link))
         return std::unexpected(QObject::tr("couldn't remove the link %1").arg(link));
     // a normal folder again, with a copy of what was shared (the shared folder keeps its files for other instances)

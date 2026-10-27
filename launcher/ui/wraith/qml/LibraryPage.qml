@@ -19,6 +19,21 @@ Rectangle {
     function setLoader(loader) { model.loaderFilter = loader }
     function focusGrid(unused) { grid.forceActiveFocus() }
 
+    // bulk selection
+    property bool selecting: false
+    property var selectedIds: ({})
+    readonly property var selectedList: Object.keys(selectedIds).filter(k => selectedIds[k])
+    function toggleSelected(id) {
+        const copy = Object.assign({}, selectedIds)
+        copy[id] = !copy[id]
+        selectedIds = copy
+        if (selectedList.length > 0) selecting = true
+    }
+    function clearSelection() { selectedIds = ({}); selecting = false }
+    // used by the UI test script: comma-separated instance ids
+    function selectIds(ids) { const m = {}; String(ids).split(",").forEach(i => m[i] = true); selectedIds = m; selecting = true }
+    function setTag(tag) { model.tagFilter = String(tag) }
+
     Shortcut { sequences: [StandardKey.Find]; onActivated: search.forceActiveFocus() }
 
     Image {
@@ -69,7 +84,8 @@ Rectangle {
                     Keys.onDownPressed: grid.forceActiveFocus()
                     Keys.onReturnPressed: grid.forceActiveFocus()
                 }
-                WButton { icon: "import"; text: qsTr("Import"); onClicked: backend.importInstance() }
+                IconButton { anchors.verticalCenter: parent.verticalCenter; icon: "image"; tip: qsTr("Screenshots from every instance"); onClicked: backend.navigate("gallery") }
+                WButton { icon: "import"; text: qsTr("Import"); onClicked: backend.showImportMenu() }
                 WButton { kind: "primary"; icon: "plus"; text: qsTr("New instance"); onClicked: backend.newInstance(root.model.groupFilter) }
             }
         }
@@ -112,6 +128,18 @@ Rectangle {
                     icon: "more"
                     tip: qsTr("Group options")
                     onClicked: backend.showGroupMenu(root.model.groupFilter)
+                }
+                WComboBox {
+                    id: tagBox
+                    visible: root.model.allTags.length > 0
+                    icon: "tag"
+                    model: [qsTr("All tags")].concat(root.model.allTags)
+                    onActivated: (index) => root.model.tagFilter = index === 0 ? "" : root.model.allTags[index - 1]
+                }
+                WButton {
+                    icon: "check-circle"
+                    text: root.selecting ? qsTr("Done") : qsTr("Select")
+                    onClicked: root.selecting ? root.clearSelection() : root.selecting = true
                 }
                 WComboBox {
                     icon: "sort"
@@ -176,10 +204,17 @@ Rectangle {
                 required property string lastPlayedText
                 required property bool running
                 required property int index
+                required property var tags
+                required property string updateAvailable
                 width: grid.cellWidth
                 height: grid.cellHeight
                 InstanceCard {
                     keyboardFocus: grid.activeFocus && grid.currentIndex === parent.index
+                    tags: parent.tags
+                    updateAvailable: parent.updateAvailable
+                    selecting: root.selecting
+                    selected: root.selectedIds[parent.instanceId] === true
+                    onToggled: root.toggleSelected(parent.instanceId)
                     anchors.fill: parent
                     anchors.margins: 8
                     anchors.bottomMargin: 12
@@ -194,6 +229,34 @@ Rectangle {
             }
             add: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.medium } }
             displaced: Transition { NumberAnimation { properties: "x,y"; duration: Theme.medium; easing.type: Easing.OutCubic } }
+        }
+
+        // bulk actions for the selected instances
+        Rectangle {
+            visible: root.selecting
+            z: 5
+            anchors { horizontalCenter: grid.horizontalCenter; bottom: parent.bottom; bottomMargin: 24 }
+            width: bulkRow.implicitWidth + 32
+            height: 60
+            radius: 30
+            color: Theme.surfaceRaised
+            border.width: 1
+            border.color: Theme.borderStrong
+            Row {
+                id: bulkRow
+                anchors.centerIn: parent
+                spacing: 8
+                T {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: root.selectedList.length === 0 ? qsTr("Click instances to select them") : Theme.count(root.selectedList.length, qsTr("1 selected"), qsTr("%1 selected"))
+                    rightPadding: 8
+                }
+                WButton { visible: root.selectedList.length > 0; compact: true; icon: "tag"; text: qsTr("Tag..."); onClicked: backend.bulkTag(root.selectedList) }
+                WButton { visible: root.selectedList.length > 0; compact: true; icon: "folder"; text: qsTr("Group..."); onClicked: backend.bulkGroup(root.selectedList) }
+                WButton { visible: root.selectedList.length > 0; compact: true; icon: "snapshot"; text: qsTr("Snapshot"); onClicked: backend.bulkSnapshot(root.selectedList) }
+                WButton { visible: root.selectedList.length > 0; compact: true; kind: "danger"; icon: "trash"; text: qsTr("Delete..."); onClicked: { if (backend.bulkDelete(root.selectedList)) root.clearSelection() } }
+                IconButton { anchors.verticalCenter: parent.verticalCenter; icon: "close"; tip: qsTr("Stop selecting"); onClicked: root.clearSelection() }
+            }
         }
 
         EmptyState {

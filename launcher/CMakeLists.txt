@@ -863,6 +863,8 @@ SET(LAUNCHER_SOURCES
     ui/wraith/WraithBrowse.h
     ui/wraith/WraithCreator.cpp
     ui/wraith/WraithCreator.h
+    ui/wraith/WraithExtras.cpp
+    ui/wraith/WraithExtras.h
     ui/wraith/WraithLogs.cpp
     ui/wraith/WraithLogs.h
     ui/wraith/WraithInstanceModel.cpp

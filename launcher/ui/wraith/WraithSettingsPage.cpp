@@ -303,6 +303,10 @@ QWidget* SettingsPage::buildSimple(const Category& category, PageHost* host, QSt
         card->addWidget(notice);
         card->addRow(tr("List popular modpacks when Browse opens"), tr("Off: Browse waits until you search."),
                      switchFor("WraithBrowseLoadPopular", setter("WraithBrowseLoadPopular"), card));
+        card->addRow(tr("Tell me about modpack updates"),
+                     tr("Off by default. Checks Modrinth and CurseForge for new versions of your modpack instances at start and every "
+                        "6 hours; it never updates anything itself. Takes effect after a restart."),
+                     switchFor("WraithUpdateNotifications", setter("WraithUpdateNotifications"), card));
         card->addRow(tr("Refresh the translation list on start"), tr("Off: it is only fetched when the language page opens."),
                      switchFor("WraithRefreshTranslationsOnStart", setter("WraithRefreshTranslationsOnStart"), card));
         card->addRow(tr("Refresh version metadata when launching"), tr("Checks for new Minecraft and loader versions before a game starts."),
