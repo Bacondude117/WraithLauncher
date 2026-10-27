@@ -72,8 +72,19 @@ There is no update check: the updater is disabled in this fork, and there is no 
 Help and wiki pages (`prismlauncher.org/wiki`), mod and pack websites, `aka.ms/MinecraftEULA`, the translation site.
 
 ## Friend servers
-A friend server runs on your computer. Wraith never opens ports on your router (no UPnP or NAT-PMP) and uses no relay,
-so only people on your local network can join unless you forward the port yourself. `online-mode` stays on, and query
+A friend server runs on your computer. Wraith never opens ports on your router (no UPnP or NAT-PMP), so by default only
+people on your local network can join.
+
+**Optional playit.gg tunnel** (off unless you tick "Use playit.gg for this server"): lets friends join over the internet
+without port forwarding.
+- Installing the agent contacts `api.github.com` (the release list of `playit-cloud/playit-agent`) and `github.com` /
+  `release-assets.githubusercontent.com` (the download). The download is checked against GitHub's published SHA-256 and
+  its Windows code signature.
+- While a server with playit.gg switched on runs, playit.gg's own agent connects to playit.gg's servers. Your friends'
+  connections pass through them, so playit.gg sees their IP addresses and the traffic volume, under
+  [playit.gg's privacy policy](https://playit.gg/privacy). You need your own playit.gg account. The agent stores its own
+  login secret in `%LOCALAPPDATA%\playit_gg`, outside Wraith.
+- Wraith only reads the agent's log files to show the address to share; it sends nothing to playit.gg itself. `online-mode` stays on, and query
 and RCON are off in the `server.properties` Wraith creates.
 
 ## Local data

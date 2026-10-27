@@ -208,6 +208,18 @@ needs no prompts during a rebuild.
 - **The screenshot gallery is a page off the Library** (no new sidebar entry), to keep the requested sidebar
   (Home, Library, Browse, Servers, Settings).
 
+## D27 — playit.gg: run the official agent, don't reimplement it
+The user asked for built-in playit.gg support as an option.
+- **Run the official agent:** Wraith runs playit.gg's own Windows agent (portable mode, its own console window, which
+  shows the account link and tunnel status) instead of reimplementing playit's protocol or using their API with a stored
+  secret. That keeps Wraith out of the user's playit account and secrets, and agent updates come from playit.gg.
+- **Download and checks:** the agent is fetched from the newest stable GitHub release whose asset has a published
+  SHA-256 digest; the signed build is preferred and its Authenticode signature is checked.
+- **Lifecycle:** it starts with a friend server that has the option on and stops with it (or when Wraith quits).
+- **Address:** read best-effort from the agent's logs, with a field to paste it.
+- **Windows only for now:** the Linux agent's portable mode isn't verified.
+- **Not tested here:** linking an account and creating the tunnel need the user's own playit.gg account.
+
 ## D13 — Card styling is opt-in per theme
 Card painting in the instance grid and the Welcome overlay is gated on `WraithTheme::isActive()`, so every other
 theme renders exactly as in Prism, and no existing option or setting was removed.

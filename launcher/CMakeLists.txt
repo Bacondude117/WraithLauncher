@@ -478,6 +478,8 @@ set(API_SOURCES
     server/FriendServer.cpp
     server/ServerFileSync.h
     server/ServerFileSync.cpp
+    server/PlayitTunnel.h
+    server/PlayitTunnel.cpp
 
     # Wraith: instance snapshots
     snapshots/SnapshotStore.h
@@ -1401,7 +1403,7 @@ if (TARGET ${Launcher_QT_DBUS})
     target_compile_definitions(Launcher_logic PUBLIC WITH_QTDBUS)
 endif()
 if(WIN32)
-    target_link_libraries(Launcher_logic Crypt32)  # Wraith: DPAPI for security/SecretStore
+    target_link_libraries(Launcher_logic Crypt32 Wintrust)  # Wraith: DPAPI (SecretStore), code signatures (PlayitTunnel)
 endif()
 
 if(APPLE)

@@ -18,6 +18,10 @@
 #include "ServerDashboardPage.h"
 
 #include <QCheckBox>
+#include <QClipboard>
+#include <QGroupBox>
+#include <QGuiApplication>
+#include <QUrl>
 #include <QFontDatabase>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -37,6 +41,7 @@
 #include "FileSystem.h"
 #include "minecraft/MinecraftInstance.h"
 #include "server/FriendServer.h"
+#include "server/PlayitTunnel.h"
 
 using WraithServer::FriendServer;
 
@@ -96,6 +101,59 @@ ServerDashboardPage::ServerDashboardPage(MinecraftInstance* instance, QWidget* p
     right->addWidget(m_join);
     settings->addLayout(right, 1);
     layout->addLayout(settings);
+
+    // optional: play over the internet through playit.gg (no port forwarding); off unless switched on per server
+    {
+        using WraithServer::PlayitTunnel;
+        auto* box = new QGroupBox(tr("Play over the internet (optional)"), this);
+        auto* boxLayout = new QVBoxLayout(box);
+        auto* explain = new QLabel(
+            tr("Without port forwarding, through <a href=\"https://playit.gg\">playit.gg</a>, a free third-party tunnel service. "
+               "It needs your own playit.gg account, and your friends' connections pass through playit.gg's servers. Wraith "
+               "downloads playit.gg's official agent from GitHub, checks its checksum, and runs it only while this server runs."),
+            box);
+        explain->setWordWrap(true);
+        explain->setOpenExternalLinks(true);
+        boxLayout->addWidget(explain);
+        auto* row = new QHBoxLayout();
+        m_playit = new QCheckBox(tr("Use playit.gg for this server"), box);
+        m_playit->setChecked(m_server->playitEnabled());
+        row->addWidget(m_playit);
+        m_playitStatus = new QLabel(box);
+        m_playitStatus->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        row->addWidget(m_playitStatus, 1);
+        m_playitClaim = new QPushButton(tr("Link playit.gg account..."), box);
+        row->addWidget(m_playitClaim);
+        m_playitInstall = new QPushButton(box);
+        row->addWidget(m_playitInstall);
+        boxLayout->addLayout(row);
+        auto* addressRow = new QHBoxLayout();
+        addressRow->addWidget(new QLabel(tr("Address to share:"), box));
+        m_playitAddress = new QLineEdit(box);
+        m_playitAddress->setPlaceholderText(tr("Shown here once the tunnel is set up, e.g. name.joinmc.link (you can also paste it)"));
+        addressRow->addWidget(m_playitAddress, 1);
+        auto* copy = new QPushButton(tr("Copy"), box);
+        addressRow->addWidget(copy);
+        boxLayout->addLayout(addressRow);
+        layout->addWidget(box);
+
+        auto* tunnel = PlayitTunnel::instance();
+        connect(m_playit, &QCheckBox::toggled, this, [this](bool on) {
+            m_server->setPlayitEnabled(on);
+            updatePlayit();
+        });
+        connect(m_playitInstall, &QPushButton::clicked, tunnel, &PlayitTunnel::install);
+        connect(m_playitClaim, &QPushButton::clicked, this, [tunnel] { DesktopServices::openUrl(QUrl(tunnel->claimUrl())); });
+        connect(m_playitAddress, &QLineEdit::editingFinished, this, [this, tunnel] {
+            if (m_playitAddress->text().trimmed() != tunnel->address())
+                tunnel->setManualAddress(m_playitAddress->text());
+        });
+        connect(copy, &QPushButton::clicked, this, [this] { QGuiApplication::clipboard()->setText(m_playitAddress->text().trimmed()); });
+        connect(tunnel, &PlayitTunnel::stateChanged, this, &ServerDashboardPage::updatePlayit);
+        connect(tunnel, &PlayitTunnel::addressChanged, this, &ServerDashboardPage::updatePlayit);
+        connect(tunnel, &PlayitTunnel::message, this, &ServerDashboardPage::appendConsole);
+        updatePlayit();
+    }
 
     // mods (left) + console (right)
     auto* splitter = new QSplitter(Qt::Horizontal, this);
@@ -182,7 +240,7 @@ QString ServerDashboardPage::joinHint() const
     if (addresses.isEmpty())
         return tr("Friends on your network join with your computer's IP and port %1.").arg(m_port->value());
     return tr("Friends on your network can join at: %1. Over the internet they'll need port %2 forwarded on your router, "
-              "or a tunnel/VPN service.")
+              "or the optional playit.gg tunnel below.")
         .arg(addresses.join(", "))
         .arg(m_port->value());
 }
@@ -228,6 +286,41 @@ void ServerDashboardPage::updateState()
     m_port->setEnabled(!m_server->isRunning());
     m_memory->setEnabled(!m_server->isRunning());
     m_command->setEnabled(state == State::Running || state == State::Starting);
+}
+
+void ServerDashboardPage::updatePlayit()
+{
+    using WraithServer::PlayitTunnel;
+    auto* tunnel = PlayitTunnel::instance();
+    const auto state = tunnel->state();
+    const QString version = tunnel->agentVersion();
+    QString text;
+    switch (state) {
+        case PlayitTunnel::State::Unsupported:
+            text = tr("Available on Windows for now.");
+            break;
+        case PlayitTunnel::State::NotInstalled:
+            text = m_playit->isChecked() ? tr("Install the agent to use it.") : QString();
+            break;
+        case PlayitTunnel::State::Installing:
+            text = tr("Downloading and verifying the agent...");
+            break;
+        case PlayitTunnel::State::Ready:
+            text = tr("Agent %1 installed; starts with the server.").arg(version);
+            break;
+        case PlayitTunnel::State::Running:
+            text = tr("Tunnel agent running (its window must stay open).");
+            break;
+    }
+    m_playitStatus->setText(text);
+    m_playit->setEnabled(state != PlayitTunnel::State::Unsupported);
+    m_playitInstall->setVisible(m_playit->isChecked() && state != PlayitTunnel::State::Unsupported && state != PlayitTunnel::State::Running);
+    m_playitInstall->setEnabled(state != PlayitTunnel::State::Installing);
+    m_playitInstall->setText(state == PlayitTunnel::State::NotInstalled ? tr("Install agent") : tr("Update agent"));
+    m_playitClaim->setVisible(!tunnel->claimUrl().isEmpty());
+    if (!m_playitAddress->hasFocus())
+        m_playitAddress->setText(tunnel->address());
+    m_playitAddress->setEnabled(m_playit->isChecked());
 }
 
 void ServerDashboardPage::reloadMods()

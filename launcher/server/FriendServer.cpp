@@ -35,6 +35,7 @@
 #include "minecraft/PackProfile.h"
 #include "net/ApiRequest.h"
 #include "net/WraithChecksum.h"
+#include "server/PlayitTunnel.h"
 #include "server/ServerFileSync.h"
 #include "settings/SettingsObject.h"
 
@@ -183,6 +184,7 @@ void FriendServer::loadSettings()
     m_memoryMb = obj.value("memoryMb").toInt(m_memoryMb);
     m_eulaAccepted = obj.value("eulaAccepted").toBool(false);
     m_writtenPort = obj.value("writtenPort").toInt(-1);
+    m_playitEnabled = obj.value("playitEnabled").toBool(false);
     for (const auto& v : obj.value("includedMods").toArray())
         m_included.insert(v.toString());
     for (const auto& v : obj.value("excludedMods").toArray())
@@ -196,6 +198,7 @@ void FriendServer::saveSettings() const
     obj.insert("memoryMb", m_memoryMb);
     obj.insert("eulaAccepted", m_eulaAccepted);
     obj.insert("writtenPort", m_writtenPort);
+    obj.insert("playitEnabled", m_playitEnabled);
     obj.insert("includedMods", QJsonArray::fromStringList(QStringList(m_included.begin(), m_included.end())));
     obj.insert("excludedMods", QJsonArray::fromStringList(QStringList(m_excluded.begin(), m_excluded.end())));
     FS::ensureFolderPathExists(serverDir());
@@ -238,6 +241,17 @@ void FriendServer::setMemoryMb(int memoryMb)
 {
     m_memoryMb = memoryMb;
     saveSettings();
+}
+
+void FriendServer::setPlayitEnabled(bool enabled)
+{
+    m_playitEnabled = enabled;
+    saveSettings();
+    auto* tunnel = PlayitTunnel::instance();
+    if (enabled && isRunning() && tunnel->state() == PlayitTunnel::State::Ready)
+        tunnel->start(m_port);
+    else if (!enabled && tunnel->isRunning())
+        tunnel->stop();
 }
 
 void FriendServer::log(const QString& line)
@@ -653,10 +667,18 @@ void FriendServer::start()
         m_writtenPort = m_port;
         saveSettings();
     }
-    // Wraith never opens router ports (no UPnP, no relay): only people on this network can join by default.
+    // Wraith never opens router ports (no UPnP): only people on this network can join, unless the user switched on
+    // the playit.gg tunnel for this server.
     log(tr("[Wraith] Players on your network can join at %1:%2. Wraith doesn't open ports on your router.")
             .arg(lanAddress())
             .arg(m_port));
+    if (m_playitEnabled) {
+        auto* tunnel = PlayitTunnel::instance();
+        if (tunnel->state() == PlayitTunnel::State::Ready)
+            tunnel->start(m_port);
+        else if (tunnel->state() != PlayitTunnel::State::Running)
+            log(tr("[Wraith] playit.gg is switched on but its agent isn't installed; install it in the dashboard."));
+    }
 
     m_process = new QProcess(this);
     m_process->setWorkingDirectory(serverDir());
@@ -716,6 +738,9 @@ void FriendServer::onProcessOutput()
 void FriendServer::onProcessFinished(int exitCode, QProcess::ExitStatus status)
 {
     m_killTimer.stop();
+    // the tunnel only runs while a server with playit.gg switched on runs
+    if (m_playitEnabled && PlayitTunnel::instance()->isRunning())
+        PlayitTunnel::instance()->stop();
     if (!m_partialLine.trimmed().isEmpty())
         log(m_partialLine.trimmed());
     m_partialLine.clear();

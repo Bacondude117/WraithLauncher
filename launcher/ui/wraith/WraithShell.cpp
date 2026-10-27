@@ -465,6 +465,16 @@ void Shell::runUiScript(const QString& path)
                     }
                 }
                 qDebug() << "Wraith UI script: key" << rest << (handled ? "handled" : "NOT BOUND");
+            } else if (command == "click") {
+                // click <text>: the first visible button or checkbox in the window with that text (widgets pages)
+                bool clicked = false;
+                for (auto* button : m_window->findChildren<QAbstractButton*>()) {
+                    if (!clicked && button->isVisible() && button->isEnabled() && button->text().remove('&') == rest) {
+                        QTimer::singleShot(0, button, &QAbstractButton::click);
+                        clicked = true;
+                    }
+                }
+                qDebug() << "Wraith UI script: click" << rest << (clicked ? "done" : "NOT FOUND");
             } else if (command == "toast-action") {
                 for (auto* toastFrame : findChildren<QFrame*>("wraithToast")) {
                     if (auto* button = toastFrame->findChild<QPushButton*>(); button && toastFrame->isVisible()) {

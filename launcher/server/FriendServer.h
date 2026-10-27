@@ -70,6 +70,10 @@ class FriendServer : public QObject {
     int memoryMb() const { return m_memoryMb; }
     void setMemoryMb(int memoryMb);
 
+    /** Opt-in: start the playit.gg agent with this server, so friends can join over the internet (PlayitTunnel.h). */
+    bool playitEnabled() const { return m_playitEnabled; }
+    void setPlayitEnabled(bool enabled);
+
     bool eulaAccepted() const { return m_eulaAccepted; }
     /** Record the user's EULA choice and write eula.txt if the server folder exists. */
     void setEulaAccepted(bool accepted);
@@ -122,6 +126,7 @@ class FriendServer : public QObject {
     bool m_eulaAccepted = false;
     int m_port = 25565;
     int m_writtenPort = -1;  ///< the port Wraith last wrote to server.properties (to detect hand edits)
+    bool m_playitEnabled = false;
     int m_memoryMb = 4096;
     QSet<QString> m_included;
     QSet<QString> m_excluded;

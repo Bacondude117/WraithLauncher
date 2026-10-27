@@ -85,3 +85,10 @@ Each new feature was designed against the values above:
   shared. Snapshots skip linked folders, so a restore never touches files other instances use.
 - **JVM presets:** applied only when picked, and asks before replacing arguments you wrote yourself.
 - **Crash analyzer and log viewer:** run locally; the suggestions link to settings and snapshots and change nothing.
+- **playit.gg tunnel:**
+  - **Opt-in per server.** The dashboard stays LAN-only by default.
+  - **Verified download:** the GitHub SHA-256 digest is checked, plus the Windows code signature of the signed build.
+    A release without a published digest is refused.
+  - **Runs only with the server**, and the user can close its window at any time.
+  - **No Wraith service:** this is a third-party service with its own account, which the dashboard says up front.
+  - ⚠️ The agent keeps its own secret in its own folder, which Wraith can't encrypt. This is documented in PRIVACY.md.

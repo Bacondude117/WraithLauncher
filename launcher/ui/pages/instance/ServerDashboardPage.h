@@ -67,4 +67,12 @@ class ServerDashboardPage : public QWidget, public BasePage {
     QPlainTextEdit* m_console = nullptr;
     QLineEdit* m_command = nullptr;
     bool m_loadingMods = false;
+
+    // Wraith: optional playit.gg tunnel
+    void updatePlayit();
+    QCheckBox* m_playit = nullptr;
+    QLabel* m_playitStatus = nullptr;
+    QPushButton* m_playitInstall = nullptr;
+    QPushButton* m_playitClaim = nullptr;
+    QLineEdit* m_playitAddress = nullptr;
 };
