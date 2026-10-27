@@ -474,6 +474,8 @@ set(API_SOURCES
     # Wraith: unified modpack search
     modplatform/unified/UnifiedPack.h
     modplatform/unified/UnifiedPack.cpp
+    modplatform/unified/UnifiedSearch.h
+    modplatform/unified/UnifiedSearch.cpp
 
     modplatform/ResourceType.h
     modplatform/ResourceType.cpp

@@ -25,7 +25,7 @@ Each step is small, builds cleanly (`wraith\build-windows.cmd build`), passes te
 ## Phase 2 â€” Goal 1: Unified modpack browser
 - [x] 2.1 Pure logic `launcher/modplatform/unified/UnifiedPack.{h,cpp}`: `UnifiedPack` struct, name
       normalisation, merge of duplicates across sources, ranking (relevance â†’ popularity). Unit tests.
-- [ ] 2.2 Source searchers (`UnifiedSearch.{h,cpp}`): parallel NetJobs for Modrinth `/search`, CurseForge
+- [x] 2.2 Source searchers (`UnifiedSearch.{h,cpp}`): parallel NetJobs for Modrinth `/search`, CurseForge
       `/mods/search` (only when a key is configured), FTB `/modpack/search` + details, Technic `/search`,
       ATLauncher `packsnew.json` filtered locally. Each source failure is isolated.
 - [ ] 2.3 `UnifiedPage` (+ list model) in New Instance dialog: search box, merged cards with source tags,
