@@ -1,116 +1,60 @@
 <p align="center">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="/program_info/org.prismlauncher.PrismLauncher.logo-darkmode.svg">
-  <source media="(prefers-color-scheme: light)" srcset="/program_info/org.prismlauncher.PrismLauncher.logo.svg">
-  <img alt="Prism Launcher" src="/program_info/org.prismlauncher.PrismLauncher.logo.svg" width="40%">
-</picture>
+  <img alt="Wraith Launcher" src="/program_info/io.github.wraithlauncher.WraithLauncher.svg" width="128">
 </p>
+
+<h1 align="center">Wraith Launcher</h1>
 
 <p align="center">
-  Prism Launcher is a custom launcher for Minecraft that allows you to easily manage multiple installations of Minecraft at once.<br />
-  <br />This is a <b>fork</b> of the MultiMC Launcher and is <b>not</b> endorsed by it.
+  A ghost-themed custom launcher for Minecraft: one search for every modpack source, a cleaner card-based UI,
+  and one-click local servers for playing with friends.
 </p>
 
-## Installation
+## About this fork
 
-- All downloads and instructions for Prism Launcher can be found on our [Website](https://prismlauncher.org/download).
-- Last build status can be found in the [GitHub Actions](https://github.com/PrismLauncher/PrismLauncher/actions) tab (this also includes the pull requests status).
+**Wraith Launcher is a fork of [Prism Launcher](https://github.com/PrismLauncher/PrismLauncher).
+It is not affiliated with, endorsed by, or supported by the Prism Launcher project.** Please don't report
+Wraith bugs to Prism's issue tracker or community channels.
 
-<p align="center">
-<a href="https://repology.org/project/prismlauncher/versions">
-    <img src="https://repology.org/badge/vertical-allrepos/prismlauncher.svg?columns=3" alt="Packaging status">
-</a>
-</p>
+Wraith exists thanks to the work of the Prism Launcher contributors and, before them, the PolyMC and MultiMC
+contributors. All of their copyright notices are kept in the source files, and the full credits are in the
+launcher's About dialog. Like its upstream, Wraith Launcher is licensed under the
+[GNU General Public License v3.0 only](LICENSE).
 
-### Development Builds
+What Wraith changes on top of Prism:
 
-Please understand that these builds are not intended for most users. There may be bugs, and other instabilities. You have been warned.
+- **Branding**: its own name, ghost icon and data folder (`%APPDATA%\WraithLauncher`, `~/.local/share/WraithLauncher`),
+  so it never shares instances, settings or URL handlers with a real Prism install.
+- **Wraith theme**: a default dark theme (deep charcoal, pale-cyan and violet accents). All of Prism's themes
+  are still available under Settings → Appearance.
+- **Unified modpack browser**: search CurseForge, Modrinth, ATLauncher, FTB and Technic at once, with duplicates
+  merged into one card. The per-source pages are still there as "Advanced" options.
+- **Friend server dashboard**: turn an instance into a local server with client-only mods excluded,
+  start/stop controls and a live console.
 
-There are development builds available through:
+Wraith still uses Prism's Minecraft metadata server (`meta.prismlauncher.org`) and links to Prism's help wiki,
+because the launcher needs that metadata and the documentation is still accurate.
 
-- [GitHub Actions](https://github.com/PrismLauncher/PrismLauncher/actions) (includes builds from pull requests opened by contributors)
-- [nightly.link](https://prismlauncher.org/nightly) (this will always point only to the latest version of develop)
+## API keys
 
-These have debug information in the binaries, so their file sizes are relatively larger.
-
-Prebuilt Development builds are provided for **Linux**, **Windows** and **macOS**.
-
-On Linux, we also offer our own [Flatpak nightly repository](https://github.com/PrismLauncher/flatpak). Most software centers are able to install it by opening [this link](https://flatpak.prismlauncher.org/prismlauncher-nightly.flatpakref).
-
-## Community & Support
-
-Feel free to create a GitHub issue if you find a bug or want to suggest a new feature. We have multiple community spaces where other community members can help you:
-
-- **Our Discord server:**
-
-[![Prism Launcher Discord server](https://discordapp.com/api/guilds/1031648380885147709/widget.png?style=banner3)](https://prismlauncher.org/discord)
-
-- **Our Matrix space:**
-
-[![Prism Launcher Space](https://img.shields.io/matrix/prismlauncher:matrix.org?style=for-the-badge&label=Matrix%20Space&logo=matrix&color=purple)](https://prismlauncher.org/matrix)
-
-- **Our Subreddit:**
-
-[![r/PrismLauncher](https://img.shields.io/reddit/subreddit-subscribers/prismlauncher?style=for-the-badge&logo=reddit)](https://prismlauncher.org/reddit)
-
-## Translations
-
-The translation effort for Prism Launcher is hosted on [Weblate](https://hosted.weblate.org/projects/prismlauncher/launcher/) and information about translating Prism Launcher is available at <https://github.com/PrismLauncher/Translations>.
+Wraith ships **without** Microsoft or CurseForge API keys: Prism's keys were issued to Prism. Until you add
+your own, Microsoft account login and CurseForge browsing are disabled. See [SETUP_KEYS.md](SETUP_KEYS.md).
 
 ## Building
 
-If you want to build Prism Launcher yourself, check the [build instructions](https://prismlauncher.org/wiki/development/build-instructions).
+Wraith builds exactly like Prism Launcher; see Prism's
+[build instructions](https://prismlauncher.org/wiki/development/build-instructions). On Windows,
+`wraith\build-windows.cmd configure|build|test|run` wraps the steps. [CLAUDE.md](CLAUDE.md) documents the
+toolchain and the code layout.
 
-## Sponsors & Partners
+## Upstream
 
-We thank all the wonderful backers over at Open Collective! Support Prism Launcher by [becoming a backer](https://opencollective.com/prismlauncher).
+- Prism Launcher: <https://github.com/PrismLauncher/PrismLauncher> ([original README](https://github.com/PrismLauncher/PrismLauncher/blob/develop/README.md))
+- Prism Launcher's forking policy, which this fork follows: it makes clear that it is not Prism Launcher, and
+  it removes Prism's API keys.
 
-[![OpenCollective Backers](https://opencollective.com/prismlauncher/backers.svg?width=890&limit=1000)](https://opencollective.com/prismlauncher#backers)
-
-Thanks to JetBrains for providing us a few licenses for all their products, as part of their [Open Source program](https://www.jetbrains.com/opensource/).
-
-<a href="https://jb.gg/OpenSource">
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://www.jetbrains.com/company/brand/img/logo_jb_dos_4.svg">
-  <source media="(prefers-color-scheme: light)" srcset="https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg">
-  <img alt="JetBrains logo" src="https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg" width="40%">
-</picture>
-</a>
-
-Thanks to Weblate for hosting our translation efforts.
-
-<a href="https://hosted.weblate.org/engage/prismlauncher/">
-<img src="https://hosted.weblate.org/widgets/prismlauncher/-/open-graph.png" alt="Translation status" width="300" />
-</a>
-
-Thanks to Netlify for providing us their excellent web services, as part of their [Open Source program](https://www.netlify.com/open-source/).
-
-<a href="https://www.netlify.com"> <img src="https://www.netlify.com/v3/img/components/netlify-color-accent.svg" alt="Deploys by Netlify" /> </a>
-
-Thanks to the awesome people over at [MacStadium](https://www.macstadium.com/), for providing M1-Macs for development purposes!
-
-<a href="https://www.macstadium.com"><img src="https://uploads-ssl.webflow.com/5ac3c046c82724970fc60918/5c019d917bba312af7553b49_MacStadium-developerlogo.png" alt="Powered by MacStadium" width="300"></a>
-
-## Forking/Redistributing/Custom builds policy
-
-You are free to fork, redistribute and provide custom builds as long as you follow the terms of the [license](LICENSE) (this is a legal responsibility), and if you made code changes rather than just packaging a custom build, please do the following as a basic courtesy:
-
-- Make it clear that your fork is not Prism Launcher and is not endorsed by or affiliated with the Prism Launcher project (<https://prismlauncher.org>).
-- Go through [CMakeLists.txt](CMakeLists.txt) and change Prism Launcher's API keys to your own or set them to empty strings (`""`) to disable them (this way the program will still compile but the functionality requiring those keys will be disabled).
-
-If you have any questions or want any clarification on the above conditions please make an issue and ask us.
-
-If you are just building Prism Launcher for your distribution, please make sure to set the `Launcher_BUILD_PLATFORM` to a slug representing your distribution. Examples are `archlinux`, `fedora` and `nixpkgs`.
-
-Note that if you build this software without removing the provided API keys in [CMakeLists.txt](CMakeLists.txt) you are accepting the following terms and conditions:
-
-- [Microsoft Identity Platform Terms of Use](https://docs.microsoft.com/en-us/legal/microsoft-identity-platform/terms-of-use)
-- [CurseForge 3rd Party API Terms and Conditions](https://support.curseforge.com/en/support/solutions/articles/9000207405-curse-forge-3rd-party-api-terms-and-conditions)
-
-If you do not agree with these terms and conditions, then remove the associated API keys from the [CMakeLists.txt](CMakeLists.txt) file by setting them to an empty string (`""`).
-
-## License [![https://github.com/PrismLauncher/PrismLauncher/blob/develop/LICENSE](https://img.shields.io/github/license/PrismLauncher/PrismLauncher?label=License&logo=gnu&color=C4282D)](LICENSE)
+## License [![GPL-3.0-only](https://img.shields.io/badge/License-GPL--3.0--only-C4282D?logo=gnu)](LICENSE)
 
 All launcher code is available under the GPL-3.0-only license.
 
-The logo and related assets are under the CC BY-SA 4.0 license.
+The Wraith ghost icon is original artwork released under GPL-3.0-only. Prism Launcher's logo assets that remain
+in `program_info/` (unused by Wraith builds) are under the CC BY-SA 4.0 license.

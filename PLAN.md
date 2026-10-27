@@ -20,7 +20,7 @@ Each step is small, builds cleanly (`wraith\build-windows.cmd build`), passes te
       replace launcher.svg in the multimc icon theme. Test: window/taskbar icon is the ghost.
 - [x] 1.4 `Wraith` theme (`WraithTheme.{h,cpp}`): charcoal palette, pale-cyan/violet accents, small QSS.
       Registered as built-in; becomes the default on first run. Other themes unchanged.
-- [ ] 1.5 README "About this fork" section (fork of Prism, not affiliated/endorsed, GPL-3.0, credits).
+- [x] 1.5 README "About this fork" section (fork of Prism, not affiliated/endorsed, GPL-3.0, credits).
 
 ## Phase 2 â€” Goal 1: Unified modpack browser
 - [ ] 2.1 Pure logic `launcher/modplatform/unified/UnifiedPack.{h,cpp}`: `UnifiedPack` struct, name
