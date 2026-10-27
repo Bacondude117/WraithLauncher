@@ -43,36 +43,10 @@
 
 #include <QIcon>
 #include <QTextEdit>
-#include <QPainterPath>
 #include "BaseInstance.h"
 #include "InstanceList.h"
+#include "ui/instanceview/WraithTiles.h"
 #include "ui/themes/WraithTheme.h"
-
-namespace {
-// Wraith card style: extra room around the icon so the rounded card has breathing space
-constexpr int s_cardPadding = 6;
-
-void drawCard(QPainter* painter, const QStyleOptionViewItem& option, const QRect& rect)
-{
-    const bool selected = option.state & QStyle::State_Selected;
-    const bool hovered = option.state & QStyle::State_MouseOver;
-    if (!selected && !hovered)
-        return;  // unselected instances float on the background; cards appear on hover/selection
-    const QColor accent = option.palette.color(QPalette::Highlight);
-    QColor fill = accent;
-    fill.setAlphaF(selected ? 0.22f : 0.10f);
-    painter->save();
-    painter->setRenderHint(QPainter::Antialiasing);
-    QPainterPath path;
-    path.addRoundedRect(QRectF(rect).adjusted(1.5, 1.5, -1.5, -1.5), 10, 10);
-    painter->fillPath(path, fill);
-    if (selected) {
-        painter->setPen(QPen(accent, 1.5));
-        painter->drawPath(path);
-    }
-    painter->restore();
-}
-}  // namespace
 
 // Origin: Qt
 static void viewItemTextLayout(QTextLayout& textLayout, int lineWidth, qreal& height, qreal& widthUsed)
@@ -160,6 +134,13 @@ static QSize viewItemTextSize(const QStyleOptionViewItem* option)
 
 void ListViewDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
+    if (WraithTheme::isActive()) {
+        // Wraith: library tiles (see WraithTiles.cpp); the classic painting below is untouched
+        QStyleOptionViewItem opt = option;
+        initStyleOption(&opt, index);
+        WraithTiles::paintTile(painter, opt, index);
+        return;
+    }
     QStyleOptionViewItem opt = option;
     initStyleOption(&opt, index);
     painter->save();
@@ -173,29 +154,23 @@ void ListViewDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     QStyle* style = opt.widget ? opt.widget->style() : QApplication::style();
 
     const int iconSize = 48;
-    const bool cardStyle = WraithTheme::isActive();
     QRect iconbox = opt.rect;
-    if (cardStyle)
-        iconbox.translate(0, s_cardPadding);
     const int textMargin = style->pixelMetric(QStyle::PM_FocusFrameHMargin, 0, opt.widget) + 1;
     QRect textRect = opt.rect;
     QRect textHighlightRect = textRect;
     // clip the decoration on top, remove width padding
-    textRect.adjust(textMargin, iconSize + textMargin + 5 + (cardStyle ? s_cardPadding : 0), -textMargin, 0);
+    textRect.adjust(textMargin, iconSize + textMargin + 5, -textMargin, 0);
 
     textHighlightRect.adjust(0, iconSize + 5, 0, 0);
 
     // draw background
-    if (cardStyle)
-        drawCard(painter, opt, opt.rect);
-    else
-        drawSelectionRect(painter, opt, textHighlightRect);
+    drawSelectionRect(painter, opt, textHighlightRect);
 
     // icon mode and state, also used for badges
     QIcon::Mode mode = QIcon::Normal;
     if (!(opt.state & QStyle::State_Enabled))
         mode = QIcon::Disabled;
-    else if ((opt.state & QStyle::State_Selected) && !cardStyle)  // the card already shows selection
+    else if (opt.state & QStyle::State_Selected)
         mode = QIcon::Selected;
     QIcon::State state = opt.state & QStyle::State_Open ? QIcon::On : QIcon::Off;
 
@@ -208,7 +183,7 @@ void ListViewDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
     QPalette::ColorGroup cg = opt.state & QStyle::State_Enabled ? QPalette::Normal : QPalette::Disabled;
     if (cg == QPalette::Normal && !(opt.state & QStyle::State_Active))
         cg = QPalette::Inactive;
-    if ((opt.state & QStyle::State_Selected) && !cardStyle) {
+    if (opt.state & QStyle::State_Selected) {
         painter->setPen(opt.palette.color(cg, QPalette::HighlightedText));
     } else {
         painter->setPen(opt.palette.color(cg, QPalette::Text));
@@ -247,6 +222,8 @@ void ListViewDelegate::paint(QPainter* painter, const QStyleOptionViewItem& opti
 
 QSize ListViewDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
+    if (WraithTheme::isActive())
+        return WraithTiles::tileSize(option);
     QStyleOptionViewItem opt = option;
     initStyleOption(&opt, index);
     opt.features |= QStyleOptionViewItem::WrapText;
@@ -257,8 +234,6 @@ QSize ListViewDelegate::sizeHint(const QStyleOptionViewItem& option, const QMode
     QStyle* style = opt.widget ? opt.widget->style() : QApplication::style();
     const int textMargin = style->pixelMetric(QStyle::PM_FocusFrameHMargin, &option, opt.widget) + 1;
     int height = 48 + textMargin * 2 + 5;  // TODO: turn constants into variables
-    if (WraithTheme::isActive())
-        height += 2 * s_cardPadding;
     QSize szz = viewItemTextSize(&opt);
     height += szz.height();
     // FIXME: maybe the icon items could scale and keep proportions?
@@ -299,6 +274,10 @@ void ListViewDelegate::updateEditorGeometry(QWidget* editor,
                                             const QStyleOptionViewItem& option,
                                             [[maybe_unused]] const QModelIndex& index) const
 {
+    if (WraithTheme::isActive()) {
+        editor->setGeometry(WraithTiles::nameRect(option));
+        return;
+    }
     const int iconSize = 48;
     QRect textRect = option.rect;
     textRect.adjust(0, iconSize + 5, 0, 0);

@@ -821,6 +821,7 @@ SET(LAUNCHER_SOURCES
     # GUI - windows
     ui/MainWindow.h
     ui/MainWindow.cpp
+    ui/MainWindowWraith.cpp
     ui/InstanceWindow.h
     ui/InstanceWindow.cpp
     ui/ViewLogWindow.h
@@ -1082,6 +1083,8 @@ SET(LAUNCHER_SOURCES
     ui/dialogs/NewComponentDialog.h
     ui/dialogs/NewInstanceDialog.cpp
     ui/dialogs/NewInstanceDialog.h
+    ui/dialogs/FriendServersDialog.cpp
+    ui/dialogs/FriendServersDialog.h
     ui/dialogs/NewsDialog.cpp
     ui/dialogs/NewsDialog.h
     ui/pagedialog/PageDialog.cpp
@@ -1180,6 +1183,8 @@ SET(LAUNCHER_SOURCES
     ui/instanceview/InstanceView.h
     ui/instanceview/InstanceDelegate.cpp
     ui/instanceview/InstanceDelegate.h
+    ui/instanceview/WraithTiles.cpp
+    ui/instanceview/WraithTiles.h
     ui/instanceview/VisualGroup.cpp
     ui/instanceview/VisualGroup.h
 )

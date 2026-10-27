@@ -122,5 +122,28 @@ QToolBar { border: none; spacing: 4px; padding: 3px; }
 QToolBar QToolButton { border-radius: 6px; padding: 4px; }
 QToolBar QToolButton:hover { background-color: rgba(180, 167, 255, 40); }
 QStatusBar { border-top: 1px solid #252833; }
+
+/* Modrinth-style layout pieces (MainWindowWraith.cpp, FriendServersDialog) */
+QToolBar#wraithNavRail { background-color: #15171d; border: none; border-right: 1px solid #252833; padding: 10px 6px; spacing: 6px; }
+QToolBar#wraithNavRail QToolButton { border-radius: 12px; padding: 8px; margin: 1px 2px; }
+QToolBar#wraithNavRail QToolButton:hover { background-color: rgba(127, 219, 234, 30); }
+QToolBar#wraithNavRail QToolButton:checked { background-color: rgba(127, 219, 234, 55); }
+QToolBar#wraithSidePanel { background-color: #15171d; border: none; border-left: 1px solid #252833; padding: 8px; spacing: 4px; }
+QToolBar#wraithSidePanel QToolButton { border-radius: 8px; padding: 6px 8px; text-align: left; }
+QToolBar#wraithSidePanel QToolButton:hover { background-color: rgba(180, 167, 255, 35); }
+QToolBar#wraithSidePanel QToolButton#wraithPlayButton {
+    background-color: #7fdbea; color: #10121a; font-weight: bold; border-radius: 10px; padding: 9px 12px; margin: 4px 0px;
+}
+QToolBar#wraithSidePanel QToolButton#wraithPlayButton:hover { background-color: #9fe6f1; }
+QToolBar#wraithSidePanel QToolButton#wraithPlayButton:disabled { background-color: #2c3040; color: #7a8091; }
+QWidget#wraithHeader { background-color: transparent; }
+QLabel#wraithTitle { font-size: 20pt; font-weight: bold; }
+QLineEdit#wraithSearch { border-radius: 16px; padding: 6px 12px; background-color: #1f222b; }
+QPushButton#wraithAccentButton {
+    background-color: #7fdbea; color: #10121a; font-weight: bold; border: none; border-radius: 10px; padding: 7px 16px;
+}
+QPushButton#wraithAccentButton:hover { background-color: #9fe6f1; }
+QFrame#wraithCard { background-color: #1f222b; border: 1px solid #2c3040; border-radius: 12px; }
+QFrame#wraithCard:hover { border-color: #3d4356; }
 )");
 }

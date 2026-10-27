@@ -222,6 +222,11 @@ QList<BasePage*> NewInstanceDialog::getPages()
     return pages;
 }
 
+void NewInstanceDialog::selectPage(const QString& pageId)
+{
+    m_container->selectPage(pageId);
+}
+
 QString NewInstanceDialog::dialogTitle()
 {
     return tr("New Instance");

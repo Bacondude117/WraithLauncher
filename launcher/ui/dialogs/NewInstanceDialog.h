@@ -62,6 +62,8 @@ class NewInstanceDialog : public QDialog, public BasePageProvider {
     void updateDialogState();
 
     void setSuggestedPack(const QString& name = QString(), InstanceTask* task = nullptr);
+    /** Open the dialog on a specific page (e.g. "unified"). */
+    void selectPage(const QString& pageId);
     void setSuggestedPack(const QString& name, QString version, InstanceTask* task = nullptr);
     void setSuggestedIconFromFile(const QString& path, const QString& name);
     void setSuggestedIcon(const QString& key);

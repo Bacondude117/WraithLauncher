@@ -51,6 +51,7 @@
 #include "VisualGroup.h"
 #include "ui/themes/CatPainter.h"
 #include "ui/themes/ThemeManager.h"
+#include "ui/instanceview/WraithTiles.h"
 #include "ui/themes/WraithTheme.h"
 
 #include <Application.h>
@@ -258,7 +259,8 @@ int InstanceView::contentWidth() const
 
 int InstanceView::itemWidth() const
 {
-    return m_itemWidth;
+    // Wraith: larger library tiles (see WraithTiles)
+    return WraithTheme::isActive() ? WraithTiles::s_tileWidth : m_itemWidth;
 }
 
 void InstanceView::mousePressEvent(QMouseEvent* event)

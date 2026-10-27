@@ -94,6 +94,22 @@ was checked in the running app, with the exceptions listed at the end.
 - `wraith/build-windows.cmd configure|build|test|run`.
 - CLAUDE.md, PLAN.md, PROGRESS.md, DECISIONS.md, SETUP_KEYS.md and this file.
 
+### Round 2: Quilt, Modrinth-style layout, runnable build
+- **Quilt friend servers:** set up with the official Quilt installer. When an instance has no Java chosen, a
+  matching installed Java is found automatically. Verified: a Quilt 1.20.1 setup produced
+  `quilt-server-launch.jar`.
+- **Modrinth-style layout** with the Wraith theme (`ui/MainWindowWraith.cpp`, `ui/instanceview/WraithTiles.*`,
+  `ui/dialogs/FriendServersDialog.*`):
+  - A left navigation rail: Library, Browse, Servers, then every original toolbar action, with Accounts at the
+    bottom.
+  - A "Library" header with an instance search and a "New instance" button.
+  - Tile cards showing the loader and Minecraft version.
+  - The Launch button is a big Play button.
+  - A "Friend Servers" list with status, Start/Stop and Manage buttons.
+  - Choosing any other theme restores Prism's classic layout immediately.
+- **Runnable build:** `wraith\build-windows.cmd install` writes `install\wraithlauncher.exe` with the Qt DLLs
+  next to it.
+
 ## How to test manually
 
 First build and run:
@@ -157,7 +173,7 @@ DECISIONS.md has all of them with reasoning (D1–D13). The main ones:
   and stop code is untested against a real server.
 - **Fabric, Forge and NeoForge server setup are untested.** There were no such instances locally. Old Forge
   versions (before 1.17) and NeoForge for 1.20.1 (`net.neoforged:forge`) may need a different installer URL.
-  **Quilt** is reported as unsupported.
+  Vanilla and Quilt setup are verified.
 - **The friend server firewall prompt:** the first real start will probably trigger a Windows Defender Firewall
   prompt for `java.exe`. Approve it on private networks for LAN play.
 - **CurseForge is untested live,** because no API key is configured. The code follows Prism's request format and

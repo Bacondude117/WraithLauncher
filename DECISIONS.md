@@ -90,6 +90,19 @@ Java and memory come from the instance's settings, like a normal launch.
 `eula.txt` gets `eula=true` only after the user ticks the checkbox; Start stays disabled otherwise. Automated
 tests therefore stop before actually running a server.
 
+## D14 — Modrinth-style layout reuses the existing toolbars
+The user asked for a full UI overhaul like Modrinth/CurseForge. Instead of a rewrite, `MainWindowWraith.cpp` moves
+the original main toolbar (all its actions, accounts at the bottom) to a left navigation rail and adds Library /
+Browse / Servers entries; a library header (title, search, "New instance") sits above the grid; instance tiles show
+loader + Minecraft version; the Launch button is a Play button; a "Friend Servers" view lists every server.
+Selecting any other theme puts Prism's classic layout back live, so no option is lost and upstream files only get
+small hooks. The rail toolbar uses a different object name so the two layouts' saved positions don't fight.
+
+## D15 — Quilt servers via the official installer; Java auto-discovery
+Quilt uses `quilt-installer install server <mc> <loader> --download-server`. When an instance has never been
+launched (no Java chosen), the server picks an installed or launcher-managed Java whose major version (from the
+JDK `release` file) matches the version's requirement, else the newest 17+.
+
 ## D13 — Card styling is opt-in per theme
 Card painting in the instance grid and the Welcome overlay is gated on `WraithTheme::isActive()`, so every other
 theme renders exactly as in Prism, and no existing option or setting was removed.

@@ -331,7 +331,13 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         view->setSourceOfGroupCollapseStatus(
             [](const QString& groupName) -> bool { return APPLICATION->instances()->isGroupCollapsed(groupName); });
         connect(view, &InstanceView::groupStateChanged, APPLICATION->instances(), &InstanceList::on_GroupStateChanged);
-        ui->horizontalLayout->addWidget(view);
+        // Wraith: the view sits in a pane so a library header can go above it
+        m_libraryPane = new QWidget(ui->centralWidget);
+        auto* libraryLayout = new QVBoxLayout(m_libraryPane);
+        libraryLayout->setContentsMargins(0, 0, 0, 0);
+        libraryLayout->setSpacing(0);
+        libraryLayout->addWidget(view);
+        ui->horizontalLayout->addWidget(m_libraryPane);
     }
     // The cat background
     {
@@ -399,6 +405,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     // TODO: refresh accounts here?
     // auto accounts = APPLICATION->accounts();
+
+    setupWraithLayout();
 
     // load the news
     {
@@ -885,7 +893,7 @@ void MainWindow::on_actionCopyInstance_triggered()
     runModalTask(task.get());
 }
 
-void MainWindow::addInstance(const QString& url, const QMap<QString, QString>& extra_info)
+void MainWindow::addInstance(const QString& url, const QMap<QString, QString>& extra_info, const QString& pageId)
 {
     QString groupName;
     do {
@@ -906,6 +914,8 @@ void MainWindow::addInstance(const QString& url, const QMap<QString, QString>& e
     }
 
     NewInstanceDialog newInstDlg(groupName, url, extra_info, this);
+    if (!pageId.isEmpty())
+        newInstDlg.selectPage(pageId);
     if (!newInstDlg.exec())
         return;
 

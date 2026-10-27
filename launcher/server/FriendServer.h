@@ -29,6 +29,7 @@
 #include "server/ServerModFilter.h"
 
 class MinecraftInstance;
+class PackProfile;
 
 namespace WraithServer {
 
@@ -88,6 +89,7 @@ class FriendServer : public QObject {
    private:
     explicit FriendServer(MinecraftInstance* instance, QObject* parent);
 
+    PackProfile* profile() const;
     void log(const QString& line);
     void setState(State state);
     void loadSettings();

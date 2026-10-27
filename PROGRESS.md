@@ -30,6 +30,11 @@ Resume from the first unchecked step in PLAN.md.
 
 - 5.1 SUMMARY.md written.
 
+- Round 2 (user request): Quilt server support + Java auto-discovery (Quilt 1.20.1 setup verified live);
+  Modrinth-style layout (nav rail, library header with search, loader/version tiles, Play button, Friend Servers
+  view), verified by screenshots, including that the Dark theme restores Prism's classic layout;
+  `wraith\build-windows.cmd install` produces a double-clickable `install\wraithlauncher.exe`.
+
 ## Next
 - All planned steps are done. Follow-ups are in SUMMARY.md under "Unfinished and risky": a real server start
   test (needs EULA consent), Fabric/Forge/NeoForge server setup tests, Quilt support, and a CurseForge test
@@ -46,7 +51,7 @@ Resume from the first unchecked step in PLAN.md.
 - Unified search: CurseForge untested live (no API key on this machine). Handoff pre-fills the source page's
   search but the user still clicks the pack there (Technic resolves to the exact pack via `#slug`).
 - Friend server: actually *running* a server was not tested, because that requires accepting the Minecraft EULA,
-  which is the user's decision. Fabric/Forge/NeoForge setup paths are untested (no such instance locally).
-  Quilt is reported as unsupported.
+  which is the user's decision. Fabric/Forge/NeoForge setup paths are untested (no such instance locally);
+  vanilla and Quilt setup are verified.
 - GUI testing note: computer-use can't target the dev exe; UIA `Invoke` on "Add Instance" hangs (modal exec),
   so tests post WM_LBUTTONDOWN/WM_CHAR to the window instead.

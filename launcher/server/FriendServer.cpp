@@ -97,14 +97,25 @@ QString FriendServer::serverDir() const
     return FS::PathCombine(m_instance->instanceRoot(), "wraith-server");
 }
 
+PackProfile* FriendServer::profile() const
+{
+    auto* profile = m_instance->getPackProfile();
+    // Components load lazily (when the instance is opened/launched); read them from disk if needed.
+    if (profile->getComponentVersion("net.minecraft").isEmpty()) {
+        if (auto res = profile->reload(Net::Mode::Offline); !res)
+            qWarning() << "Friend server: couldn't load components of" << m_instance->name() << res.error();
+    }
+    return profile;
+}
+
 QString FriendServer::minecraftVersion() const
 {
-    return m_instance->getPackProfile()->getComponentVersion("net.minecraft");
+    return profile()->getComponentVersion("net.minecraft");
 }
 
 FriendServer::Loader FriendServer::loader() const
 {
-    auto* profile = m_instance->getPackProfile();
+    auto* profile = this->profile();
     if (!profile->getComponentVersion("net.fabricmc.fabric-loader").isEmpty())
         return Loader::Fabric;
     if (!profile->getComponentVersion("org.quiltmc.quilt-loader").isEmpty())
@@ -118,7 +129,7 @@ FriendServer::Loader FriendServer::loader() const
 
 QString FriendServer::loaderVersion() const
 {
-    auto* profile = m_instance->getPackProfile();
+    auto* profile = this->profile();
     switch (loader()) {
         case Loader::Fabric:
             return profile->getComponentVersion("net.fabricmc.fabric-loader");
@@ -277,8 +288,8 @@ QString FriendServer::javaPath() const
 
     // The instance was never launched (no Java picked yet): find an installed Java that suits this version.
     QList<int> wanted;
-    if (auto profile = m_instance->getPackProfile()->getProfile())
-        wanted = profile->getCompatibleJavaMajors();
+    if (auto launchProfile = profile()->getProfile())
+        wanted = launchProfile->getCompatibleJavaMajors();
     QStringList candidates = JavaUtils().FindJavaPaths();
     // Java runtimes the launcher downloaded itself (<data>/java/<runtime>/bin/java)
     QDirIterator managed(APPLICATION->javaPath(), { "java", "java.exe" }, QDir::Files, QDirIterator::Subdirectories);

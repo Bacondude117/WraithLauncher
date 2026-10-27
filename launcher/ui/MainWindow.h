@@ -50,6 +50,7 @@ class EditableLabel;
 class LaunchController;
 class NewsChecker;
 class QLabel;
+class QLineEdit;
 class QTextEdit;
 class QToolButton;
 class InstanceProxyModel;
@@ -221,7 +222,11 @@ class MainWindow : public QMainWindow {
 
     void updateInstanceToolBarOrientation(Qt::Orientation orientation);
 
-    void addInstance(const QString& url = QString(), const QMap<QString, QString>& extra_info = {});
+    void addInstance(const QString& url = QString(), const QMap<QString, QString>& extra_info = {}, const QString& pageId = QString());
+
+    // Wraith: Modrinth-style layout (left navigation rail, library header, Play button); see MainWindowWraith.cpp
+    void setupWraithLayout();
+    void applyWraithLayout(bool enabled);
     void setCatBackground(bool enabled);
     void updateCatState();
     void updateInstanceToolIcon(QString new_icon);
@@ -256,4 +261,12 @@ class MainWindow : public QMainWindow {
 
     // managed by the application object
     Task* m_versionLoadTask = nullptr;
+
+    // Wraith layout widgets (managed by Qt)
+    QWidget* m_libraryPane = nullptr;
+    QWidget* m_wraithHeader = nullptr;
+    QLineEdit* m_wraithSearch = nullptr;
+    QList<QAction*> m_wraithRailActions;
+    Qt::ToolButtonStyle m_classicToolButtonStyle = Qt::ToolButtonTextBesideIcon;
+    QSize m_classicIconSize;
 };
