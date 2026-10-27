@@ -22,8 +22,14 @@ Resume from the first unchecked step in PLAN.md.
 - 3.2/3.3 Instance grid: rounded hover/selection cards and a quiet Welcome card when the Wraith theme is active;
   other themes paint exactly as before. Verified by screenshot with dummy instances.
 
+- 4.1 `WraithServer::classifyModsFolder` (packwiz side metadata, then known client-only list, else include) + tests.
+- 4.2-4.4 `FriendServer` (setup: vanilla jar from Mojang manifest, Fabric server launcher, Forge/NeoForge installer
+  `--installServer`; copies included mods + config folders; eula/server.properties; start/stop/console/commands)
+  and the "Friend Server" instance page. Verified live: vanilla 1.20.1 setup downloaded server.jar, copied lithium,
+  skipped sodium + modmenu, Start stays disabled until the EULA box is ticked.
+
 ## Next
-- 4.1 Client-only mod filter + tests.
+- 5.1 SUMMARY.md.
 
 ## Known issues
 - `FileSystem` test needs symlink privilege (admin or Developer Mode). Excluded in the helper script.
@@ -35,5 +41,8 @@ Resume from the first unchecked step in PLAN.md.
 - macOS `.icns`/Icon Composer asset not verified (no Mac available).
 - Unified search: CurseForge untested live (no API key on this machine). Handoff pre-fills the source page's
   search but the user still clicks the pack there (Technic resolves to the exact pack via `#slug`).
+- Friend server: actually *running* a server was not tested, because that requires accepting the Minecraft EULA,
+  which is the user's decision. Fabric/Forge/NeoForge setup paths are untested (no such instance locally).
+  Quilt is reported as unsupported.
 - GUI testing note: computer-use can't target the dev exe; UIA `Invoke` on "Add Instance" hangs (modal exec),
   so tests post WM_LBUTTONDOWN/WM_CHAR to the window instead.

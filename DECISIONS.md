@@ -51,9 +51,45 @@ sources in parallel and merges results; choosing "Install from X" switches the d
 pack name searched. This reuses each source's version picker and install task (ATLauncher optional mods,
 Technic Solder, etc.) instead of duplicating fragile install logic.
 
+## D7b — "Advanced" heading page instead of renaming the per-source pages
+The per-source pages are untouched upstream classes. Rather than edit five files to rename them or hide them,
+an "Advanced" page is inserted before them in the sidebar; it explains them and links to each. Nothing is hidden.
+
 ## D8 — Unified search per-source strategy
 Modrinth `/search` and CurseForge `/mods/search` give relevance-ordered results with download counts.
 FTB `/modpack/search/N?term=` returns IDs, followed by `/modpack/<id>` for details (installs). Technic
 `/search` has no popularity data. ATLauncher has no search API; `packsnew.json` is fetched and filtered
 locally (its `position` is used as a popularity proxy). Legacy FTB (dead CDN) and FTB App import (local)
 are not part of the unified search.
+
+## D8b — Ranking
+Relevance = 0.7 × name match + 0.3 × best per-source rank + 0.05 per extra source, exact name matches pinned to
+the top tier. Packs are sorted by relevance in tiers of 0.1, then by summed downloads/installs inside a tier
+("relevance first, then popularity"). With an empty query the browser shows the most popular packs.
+CurseForge has no relevance sort, so it is queried by popularity and re-ranked locally.
+
+## D9 — Friend server lives in `<instance>/wraith-server/`, built from copies
+The instance is never modified; mods and configs are copied, so the server can't corrupt the player's game files
+and "Rebuild" is always safe. Settings (port, memory, EULA choice, per-mod overrides) live in
+`wraith-server.json`. The server object is parented to the instance, so it outlives the instance window (console
+history kept) and is stopped (`stop`, then kill after 15 s) when the instance or the launcher goes away.
+
+## D10 — Client-only detection order
+1. user override, 2. packwiz `.index` `side` (Modrinth client_side/server_side, written when mods are installed
+through the launcher), 3. a short list of well-known client-only mods, 4. otherwise include. Including an
+unknown mod is the safer failure: Fabric skips client-only mods itself, while wrongly excluding a gameplay mod
+breaks joining.
+
+## D11 — Server software per loader
+Vanilla: Mojang version manifest. Fabric: official server launcher jar from meta.fabricmc.net (downloads vanilla
+on first start). Forge/NeoForge: official installer with `--installServer`, launched via the generated
+`win_args.txt`/`unix_args.txt` (modern) or the forge jar (legacy). Quilt: not yet (needs the Quilt installer).
+Java and memory come from the instance's settings, like a normal launch.
+
+## D12 — The EULA is never accepted automatically
+`eula.txt` gets `eula=true` only after the user ticks the checkbox; Start stays disabled otherwise. Automated
+tests therefore stop before actually running a server.
+
+## D13 — Card styling is opt-in per theme
+Card painting in the instance grid and the Welcome overlay is gated on `WraithTheme::isActive()`, so every other
+theme renders exactly as in Prism, and no existing option or setting was removed.

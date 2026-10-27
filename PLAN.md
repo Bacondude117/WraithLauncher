@@ -41,15 +41,15 @@ Each step is small, builds cleanly (`wraith\build-windows.cmd build`), passes te
       (rounded hover/selection backgrounds, more padding). Existing behaviour unchanged elsewhere.
 
 ## Phase 4 — Goal 3: Friend server dashboard
-- [x] 4.1 Logic `launcher/server/ClientOnlyFilter.{h,cpp}`: classify mods via packwiz `.index` side metadata
+- [x] 4.1 Logic `launcher/server/ServerModFilter.{h,cpp}`: classify mods via packwiz `.index` side metadata
       (from Modrinth client_side/server_side) + a small built-in list of well-known client-only mod ids. Tests.
-- [ ] 4.2 `ServerSetupTask`: create `<instance>/server/`, copy server-safe mods/config, download the vanilla
-      server jar for the instance's Minecraft version from Mojang's manifest; loader support via installers
-      where feasible (Fabric server launcher first), write `eula.txt` only after the user accepts.
-- [ ] 4.3 `ServerProcess`: start/stop (graceful `stop` command, then kill), uses the instance's Java,
-      memory settings; stdout → console model; stdin command line.
-- [ ] 4.4 `ServerDashboardPage` instance page: status, setup, start/stop, live console, mod exclusion list,
-      port/MOTD basics, LAN address hint.
+- [x] 4.2 Setup (in `launcher/server/FriendServer`): create `<instance>/wraith-server/`, copy server-safe mods/config,
+      vanilla jar from Mojang's manifest, Fabric server launcher, Forge/NeoForge installer; `eula.txt` only after
+      the user accepts. (Quilt: not yet.)
+- [x] 4.3 Process control (also `FriendServer`): start/stop (graceful `stop` command, then kill), instance's Java and
+      memory; stdout → console; stdin command line.
+- [x] 4.4 `ServerDashboardPage` instance page: status, setup, start/stop, live console, mod exclusion list,
+      port/memory, EULA consent, LAN address hint.
 
 ## Phase 5 — Wrap-up
 - [ ] 5.1 SUMMARY.md (changes, manual test steps, decisions, unfinished/risky items).
