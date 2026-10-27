@@ -35,10 +35,23 @@ Resume from the first unchecked step in PLAN.md.
   view), verified by screenshots, including that the Dark theme restores Prism's classic layout;
   `wraith\build-windows.cmd install` produces a double-clickable `install\wraithlauncher.exe`.
 
+- Round 3 (user request, "must no longer look like Prism"): FEATURES.md (full feature map) and DESIGN.md first,
+  then the Wraith shell, built screen by screen with a screenshot review and a commit per screen
+  (screenshots in `/screenshots`):
+  - Shell + sidebar + Home + Library (Qt Quick in QQuickWidgets over MainWindow's actions).
+  - Instance page (header, tabs; simple Content/Worlds lists; original pages under Advanced via PageHost).
+  - Browse (filters panel, cards, details; Modrinth installs natively, verified end to end).
+  - Settings (categories with simple controls; original pages under Advanced, applied on leave).
+  - Servers (friend server cards, New server picker, state toasts).
+  - New instance sheet (verified: Fabric 1.21.1 instance created), creation toasts, Esc back, Ctrl+N.
+  - Upstream bug fix: InstanceView divide-by-zero when narrower than one item.
+  - Verified: Edit Instance / Settings / Manage Accounts requests from Prism code land in the shell; 24/24 tests;
+    `install\wraithlauncher.exe` runs the new UI with Qt off PATH.
+
 ## Next
-- All planned steps are done. Follow-ups are in SUMMARY.md under "Unfinished and risky": a real server start
-  test (needs EULA consent), Fabric/Forge/NeoForge server setup tests, Quilt support, and a CurseForge test
-  with a key.
+- Follow-ups are in SUMMARY.md under "Unfinished and risky": a real game launch and server start (both need an
+  account or the user's EULA consent), Fabric/Forge/NeoForge server setup tests, a CurseForge test with a key,
+  and redesigning the dialogs marked 🟡 in FEATURES.md.
 
 ## Known issues
 - `FileSystem` test needs symlink privilege (admin or Developer Mode). Excluded in the helper script.

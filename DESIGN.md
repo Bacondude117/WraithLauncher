@@ -58,7 +58,7 @@ accounts, Java, every advanced option) is Prism's, unchanged.
   account menu. The active item has a filled pill and an accent bar. Running instances get a small "Playing"
   indicator on Library.
 - **Instance page** is pushed from Home/Library/Servers and has a back button ("← Library").
-- Keyboard: Ctrl+N new instance, Ctrl+, settings, Ctrl+F focus search, Esc back.
+- Keyboard: Ctrl+N new instance, Ctrl+, settings, Ctrl+F focus the library search, Esc back from an instance.
 
 ## Screens
 
@@ -68,8 +68,7 @@ accounts, Java, every advanced option) is Prism's, unchanged.
   loader · version, "Last played 2 hours ago", and a big Play button.
 - **Recent** row: up to 6 more recently played instances as cards.
 - **Quick actions**: New instance, Browse modpacks, Import, Start a friend server.
-- **Popular modpacks**: the first results of the unified browser (an empty query sorted by popularity), each linking
-  to Browse.
+- (Not built yet: a "Popular modpacks" strip fed by the unified browser.)
 - Empty state (no instances): an illustration-style ghost, "Your library is empty", plus New instance and Browse
   modpacks buttons.
 
@@ -114,15 +113,22 @@ accounts, Java, every advanced option) is Prism's, unchanged.
   an explanation.
 
 ### Settings
-- Category list on the left: General, Appearance, Game, Java & memory, Accounts, Content, Storage, Network,
-  Advanced, About.
-- Each category shows simple rows first (label, description, control on the right) and then an **Advanced**
-  disclosure that embeds the matching original page(s). Changes in embedded pages are applied when you leave the
-  category or the Settings page.
+- Category list on the left: General, Appearance, Game, Java & memory, Accounts, Network, Advanced, About.
+  Folders, mod and console options live in Prism's "Launcher" page, reached through General → Advanced.
+- Each category shows simple rows first (label, description, control on the right: switch, slider, dropdown), then
+  an **Advanced** card with one row per original page. A row opens that page inside the category. Accounts and
+  Network show their pages directly. Changes in embedded pages are applied when you leave the category or the
+  Settings page (see DECISIONS D17).
+
+### New instance sheet
+- A dimmed overlay with a centred sheet: Name (placeholder suggests "Fabric 1.21.1"), Minecraft version (newest first,
+  "Show snapshots" switch), mod loader chips (None/Fabric/Quilt/Forge/NeoForge, with the recommended loader
+  version shown underneath), Group. Footer: Import file, More options (Prism's full dialog), Cancel, Create.
 
 ### Toasts
-- Bottom-right stack, max 3, auto-dismiss after 4 s (errors 8 s), optional action button (Undo, Open). Used for:
-  instance created/copied/deleted (Undo), launch failed, server started/stopped, settings saved, install started.
+- Bottom-right stack, max 3, slide in, auto-dismiss after 4 s (7 s with an action, 8 s for errors), optional action
+  button. Used for: instance ready (Open), instance moved to trash (Undo), modpack install started, friend server
+  online/stopped/set up, seed copied, EULA needed, restart needed after switching layouts.
 
 ## Visual system
 

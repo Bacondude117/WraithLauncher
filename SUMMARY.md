@@ -1,9 +1,9 @@
 # Wraith Launcher — Summary
 
-Branch `wraith-dev`, based on Prism Launcher `develop` @ `390a240ab`. There are 14 commits, touching 68 files
-(+4140 / −604 lines). Nothing was pushed and the remotes are unchanged.
+Branch `wraith-dev`, based on Prism Launcher `develop` @ `390a240ab`. Nothing was pushed and the remotes are
+unchanged (`git log 390a240ab..wraith-dev` lists every Wraith commit).
 
-Status: **branding and all three goals are implemented and build cleanly.** The Debug build passes with
+Status: **branding, all three goals and the round-3 interface redesign are implemented and build cleanly.** The Debug build passes with
 warnings-as-errors, and 24/24 tests pass. The 25th test, `FileSystem`, is excluded (see "Risks"). Every feature
 was checked in the running app, with the exceptions listed at the end.
 
@@ -110,6 +110,47 @@ was checked in the running app, with the exceptions listed at the end.
 - **Runnable build:** `wraith\build-windows.cmd install` writes `install\wraithlauncher.exe` with the Qt DLLs
   next to it.
 
+### Round 3: a new interface (Wraith shell)
+Wraith no longer uses Prism's toolbar, grid and dialogs. FEATURES.md maps every old screen, action and option to
+its new place, with a status for each. DESIGN.md describes the layout, tokens and technical approach. Screenshots of
+every screen are in `/screenshots`.
+- **Technology:**
+  - The primary screens are Qt Quick (QML), hosted in `QQuickWidget`s inside the existing main window
+    (`launcher/ui/wraith/`).
+  - MainWindow keeps running as the controller, so launching, deleting with trash and undo, exporting, accounts
+    and imports are Prism's own code.
+  - Power-user pages are the original Prism pages, embedded inside the shell under "Advanced" and restyled.
+- **Sidebar:** Home, Library, Browse and Servers; Settings and More (folders, help, about, quit); an account chip.
+- **Home:** a "Continue playing" hero with Play, recent instance cards and quick actions.
+- **Library:**
+  - Cards with blurred cover art, loader and version badges, last played, and a hover Play/Stop button and ⋯ menu.
+  - Search, loader chips, a group filter (with a group menu) and sorting.
+  - Empty states and drag-and-drop import.
+- **Instance page:**
+  - A banner with icon, name, badges and playtime, Play with a launch menu, the folder and an ⋯ menu.
+  - Tabs: Content, Worlds, Screenshots, Servers, Logs, Friend Server and Settings.
+  - Content (enable switches, search, Browse content, update check) and Worlds (cards with quick-join Play) have
+    simple lists; Advanced opens the full original page in place.
+  - Settings has Essentials (name, group, memory slider, Java) and every original page under Advanced.
+  - Esc goes back.
+- **Browse:**
+  - The unified search, with source filters (counts, progress, errors), relevance/downloads sorting, result cards and
+    a details panel.
+  - Modrinth packs install directly (version picker; verified end to end). Other sources open their own page with
+    the search filled in.
+- **Settings:** General, Appearance, Game, Java & memory, Accounts, Network, Advanced (classic layout switch, folders,
+  cache, logs) and About, with simple controls first and the original pages under Advanced.
+- **Servers:** friend-server cards with live status, Start/Stop and Manage, a New server picker, and toasts when a
+  server goes online or stops.
+- **New instance sheet:** name, version, loader with automatic recommended version, and group (verified by creating
+  a Fabric 1.21.1 instance). Ctrl+N opens it, and "More options" opens Prism's full dialog.
+- **Toasts** replace several popups: instance ready (Open), moved to trash (Undo), install started, server state,
+  seed copied.
+- **Classic layout:** Settings → Advanced → Classic layout brings Prism's layout back after a restart.
+- **Upstream fix:** `InstanceView::calculateItemsPerRow()` could return 0 and divide by zero; it is now clamped to 1.
+- **UI test script:** `WRAITH_UI_SCRIPT` drives the app for screenshots (navigate, select, trigger actions, create
+  instances, capture). It does nothing unless that variable is set.
+
 ## How to test manually
 
 First build and run:
@@ -166,6 +207,19 @@ DECISIONS.md has all of them with reasoning (D1–D13). The main ones:
   Upstream files only get small, commented hook edits, which keeps rebases manageable.
 
 ## Unfinished and risky
+
+- **Round 3 UI:**
+  - Launching a game was not tested: there is no account here, and Microsoft login needs a client ID. This
+    includes the Play/Stop state, the "N playing" badge and the console switching to the Logs tab.
+  - Delete with Undo, export, copy, shortcut, rename, change icon and the folder/help menus call Prism's actions
+    unchanged, but weren't clicked through in this session (see the ☑️ rows in FEATURES.md).
+  - The dialogs marked 🟡 in FEATURES.md (copy, export, icon picker, resource download, loader/Java install,
+    login, progress) are the original dialogs in the Wraith theme, not redesigned.
+  - The shell is always dark. Choosing another theme in Settings → Appearance only changes dialogs and the
+    classic layout.
+  - Home has no "Popular modpacks" strip yet (DESIGN.md mentions it as not built).
+  - The test data folder `build\run-theme` holds the seeded test instances used for the screenshots, plus two
+    created during testing ("Sheet Test", "Simply Optimized Reloaded").
 
 - **The friend server was never actually started in testing.** Starting it requires accepting the Minecraft
   EULA, which is your decision to make, so automated testing stopped after Set Up. Vanilla setup was verified

@@ -103,6 +103,39 @@ Quilt uses `quilt-installer install server <mc> <loader> --download-server`. Whe
 launched (no Java chosen), the server picks an installed or launcher-managed Java whose major version (from the
 JDK `release` file) matches the version's requirement, else the newest 17+.
 
+## D16 — Full UI redesign as a hybrid Qt Quick shell (supersedes D14)
+The user asked for a UI that a Prism user would not recognise. Restyling Qt Widgets could not get there, so the
+primary screens (sidebar, Home, Library, Browse, Servers, instance header, content and world lists, New instance
+sheet) are QML in `QQuickWidget`s sharing one engine. MainWindow stays alive as the controller: its actions,
+dialogs, URL handling and task running are what the shell calls, so behaviour and upstream fixes carry over.
+The power-user pages (mod manager, components, logs, per-instance and global settings) are the original
+`BasePage`s, embedded in the shell by `PageHost` (a `BasePageContainer`) and restyled. Rewriting them would risk
+losing options and would diverge for no user benefit, since they are already "one click away" under Advanced.
+Prism's classic layout is kept behind a setting (`WraithClassicLayout`) as an escape hatch.
+
+## D17 — Settings edits: simple controls write directly, pages apply on leave
+The original settings pages load their values when constructed and write them all in `apply()`. Global pages are
+therefore built fresh when Settings opens and applied when it is left, as Prism's dialog does on OK. Only pages
+that were opened are applied, so an untouched page never overwrites a simple control's change. When a simple
+control changes a setting whose advanced page is open, that page is applied first and then rebuilt or reloaded.
+
+## D18 — What stays a dialog
+Dialogs that ask for a decision in the middle of a task (progress, failures, blocked mods, confirmations) and the
+specialised editors (copy, export, icon picker, resource download, loader/Java install, account login, setup
+wizard) still open as the original dialogs, in the Wraith theme. FEATURES.md marks them 🟡. Redesigning them is
+follow-up work and doesn't block the navigation and layout goals.
+
+## D19 — Modrinth installs natively in Browse; other sources hand off
+Modrinth's version list is a single API call, and Prism's `InstanceImportTask` installs a `.mrpack` URL, so Browse
+installs Modrinth packs directly, icon included. CurseForge (no key here), FTB, ATLauncher and Technic have
+source-specific steps (optional mods, Solder, blocked files), so Browse opens their original page in the full
+dialog with the search filled in, rather than duplicating those flows.
+
+## D20 — Upstream bug fixed in place: InstanceView items per row
+`InstanceView::calculateItemsPerRow()` returned 0 for a view narrower than one item, and `VisualGroup::update()`
+then divided by zero. The shell keeps that view hidden at zero width, which surfaced it as a Qt debug assert. It is
+clamped to 1, a one-line fix suitable for upstream.
+
 ## D13 — Card styling is opt-in per theme
 Card painting in the instance grid and the Welcome overlay is gated on `WraithTheme::isActive()`, so every other
 theme renders exactly as in Prism, and no existing option or setting was removed.

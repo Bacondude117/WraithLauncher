@@ -17,6 +17,7 @@
  */
 #include "WraithShell.h"
 
+#include <QAction>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -332,7 +333,7 @@ static QImage captureWindow(QWidget* window)
 // A tiny command runner used to drive the UI for screenshots: WRAITH_UI_SCRIPT=<file>, one command per line.
 //   nav <page> | instance <name>[|tab] | settings <category> | call <page> <function> [argument] | size <w> <h>
 //   newinstance [group] | newinstance-loader <loader> <mc> | newinstance-create <name>|<mc>|<loader>|<group>
-//   wait <ms> | shot <file.png> | toast <text> | dump | quit
+//   select <instance name> | action <MainWindow QAction name> | wait <ms> | shot <file.png> | toast <text> | dump | quit
 void Shell::runUiScript(const QString& path)
 {
     QFile file(path);
@@ -363,6 +364,14 @@ void Shell::runUiScript(const QString& path)
                 }
             } else if (command == "settings") {
                 showSettings(rest);
+            } else if (command == "select") {
+                for (int i = 0; i < APPLICATION->instances()->count(); i++) {
+                    if (APPLICATION->instances()->at(i)->name() == rest)
+                        m_backend->select(APPLICATION->instances()->at(i)->id());
+                }
+            } else if (command == "action") {
+                if (auto* action = m_window->findChild<QAction*>(rest))
+                    action->trigger();
             } else if (command == "newinstance") {
                 showNewInstance(rest);
             } else if (command == "newinstance-loader") {

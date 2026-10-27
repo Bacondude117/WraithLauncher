@@ -26,6 +26,14 @@ Gotchas:
   Edit docs with an editor or `python -X utf8`, or pass `-Encoding utf8` explicitly.
 - Never run the `FileSystem` test: it elevates `*_filelink.exe` to create symlinks, which triggers UAC
   prompts in a loop on a machine without Developer Mode.
+- UI screenshots: set `WRAITH_UI_SCRIPT=<file>` and run with `--dir build\run-theme` (seeded test instances).
+  Commands are documented above `Shell::runUiScript`. Screenshots go to `/screenshots`. This machine has a GPU
+  overlay tool that draws into Direct3D windows; in-app capture (`shot`) avoids it, external screen grabs don't.
+- QML: a local component may not share a name with a Qt Quick Controls type (Qt 6.10+ has `SearchField`), and
+  a model role must not be called `enabled`. `font.pixelSize` takes integers.
+- `git commit -m` with double quotes in the message is mangled by Windows PowerShell 5.1; use `-F <file>`.
+- `wraith\build-windows.cmd install` deploys QML imports via windeployqt `--qmldir`; it once exited 255 mid-way
+  and succeeded when re-run.
 
 ## Architecture map
 
@@ -60,7 +68,18 @@ small hook edits:
 - **Goal 1 – unified modpack browser**: `launcher/modplatform/unified/` (search fan-out, merge, ranking —
   pure logic, unit-tested) and `launcher/ui/pages/modplatform/unified/` (page). Registered first in
   `NewInstanceDialog::getPages()`; existing per-source pages stay, grouped as "Advanced".
-- **Goal 2 – UI refresh**: card delegates in `launcher/ui/widgets/` + Wraith theme stylesheet; no settings removed.
+- **Goal 2 – UI (round 3: full redesign)**: the Wraith shell in `launcher/ui/wraith/` replaces Prism's main
+  window chrome, instance window and settings dialog (see DESIGN.md, FEATURES.md):
+  - `WraithShell` (sidebar + page stack + toasts + UI test script), mounted by `MainWindowWraith.cpp::setupWraithShell`
+    unless the `WraithClassicLayout` setting is on. `MainWindow` stays the controller; the shell drives its QActions.
+  - QML in `ui/wraith/qml/` (tokens in `style/Theme.qml`, mirrored in `WraithStyle.h`), hosted in `QQuickWidget`s that
+    share one engine; collected into a generated `wraith.qrc` (prefix `/wraith`) by `launcher/CMakeLists.txt`.
+    Line icons in `ui/wraith/icons/` (`currentColor`, tinted by the `image://wraith/glyph/...` provider).
+  - C++ bridges: `WraithBackend` (context property `backend`), `WraithInstanceModel`, `WraithListModels`,
+    `WraithBrowse` (`browseModel`), `WraithNewInstance` (`newInstance`).
+  - Original Prism pages are embedded by `WraithPageHost` (a `BasePageContainer`) and restyled by
+    `shellStyleSheet()`/`modernizePage()`. `Application::showInstanceWindow`/`ShowGlobalSettings` route into the shell.
+  - Classic layout + Wraith theme still uses the round-1/2 card delegates in `launcher/ui/instanceview/WraithTiles`.
 - **Goal 3 – friend server dashboard**: `launcher/server/` (server setup/launch logic, client-only mod
   filtering) and `launcher/ui/pages/instance/ServerDashboardPage.{h,cpp}` registered in `InstancePageProvider.h`.
 
