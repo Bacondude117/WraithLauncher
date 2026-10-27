@@ -17,22 +17,66 @@
  */
 #pragma once
 
+#include <QHash>
 #include <QWidget>
+#include <functional>
 
 #include "WraithShell.h"
 
+class BasePage;
+class QButtonGroup;
+class QPushButton;
+class QStackedWidget;
+class QVBoxLayout;
+
 namespace Wraith {
 
-/** The Settings page: categories with simple controls first and the original settings pages under Advanced. */
+class PageHost;
+
+/**
+ * The Settings page: a category list; each category has simple controls first and the original global settings
+ * pages under "Advanced" (or shown directly, for Accounts and Network). The original pages are created fresh each
+ * time Settings opens and applied when it is left, like Prism's settings dialog on OK.
+ */
 class SettingsPage : public QWidget, public ShellPage {
     Q_OBJECT
    public:
     SettingsPage(Shell* shell, QWidget* parent);
 
+    /** A category key ("general", "java", ...) or a Prism settings page id ("accounts", "java-settings", ...). */
     void selectCategory(const QString& category);
 
+    void pageShown() override;
+    bool pageLeaving() override;
+
    private:
+    struct Category {
+        QString key;
+        QString label;
+        QString icon;
+        QStringList pageIds;
+        bool pagesFirst = false;  // no simple view: the pages are the category
+    };
+
+    void build();
+    void clear();
+    QWidget* buildSimple(const Category& category, PageHost* host, QStackedWidget* stack);
+    void showCategory(const QString& key);
+    void showAdvanced(const QString& key, const QString& pageId);
+    /** Simple controls write settings directly; an advanced page already open is saved first and then reloaded. */
+    void write(const QString& categoryKey, const std::function<void()>& change);
+
     Shell* m_shell;
+    QList<Category> m_categories;
+    QWidget* m_nav;
+    QVBoxLayout* m_navLayout;
+    QButtonGroup* m_navGroup;
+    QStackedWidget* m_stack;
+    QHash<QString, QPushButton*> m_navButtons;
+    QHash<QString, QStackedWidget*> m_categoryStacks;
+    QHash<QString, PageHost*> m_hosts;
+    QString m_current;
+    bool m_built = false;
 };
 
 }  // namespace Wraith

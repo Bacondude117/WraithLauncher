@@ -17,6 +17,7 @@
  */
 #pragma once
 
+#include <QIcon>
 #include <QString>
 
 class QWidget;
@@ -44,6 +45,9 @@ inline constexpr const char* danger = "#ff6b7d";
 namespace Wraith {
 /** Stylesheet for everything inside the shell that is a widget (embedded pages, menus, toasts, settings rows). */
 QString shellStyleSheet();
+
+/** One of the shell's line glyphs (launcher/ui/wraith/icons) as a QIcon; `checkedColor` is used for the On state. */
+QIcon glyphIcon(const QString& name, const QString& color, const QString& checkedColor = QString());
 
 /**
  * Makes an original Prism page fit the shell: its side toolbars become a horizontal action bar at the top with

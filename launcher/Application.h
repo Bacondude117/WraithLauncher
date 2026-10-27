@@ -191,6 +191,8 @@ class Application : public QApplication {
     bool updatesAreAllowed() const;
 
     void ShowGlobalSettings(class QWidget* parent, QString openPage = QString());
+    /** Wraith: the global settings pages, hosted by the shell's Settings page. */
+    GenericPageProvider* globalSettingsPages() const { return m_globalSettingsProvider.get(); }
 
     bool updaterEnabled();
     static QString updaterBinaryName();

@@ -96,30 +96,54 @@ QLabel* muted(const QString& text, QWidget* parent)
     return label;
 }
 
+namespace {
+/** A frame that acts like a button (QPushButton ignores child layouts when sizing itself). */
+class ClickableFrame : public QFrame {
+   public:
+    ClickableFrame(std::function<void()> onClick, QWidget* parent) : QFrame(parent), m_onClick(std::move(onClick))
+    {
+        setAttribute(Qt::WA_Hover);
+        setCursor(Qt::PointingHandCursor);
+    }
+
+   protected:
+    void mouseReleaseEvent(QMouseEvent* event) override
+    {
+        if (event->button() == Qt::LeftButton && rect().contains(event->pos()))
+            m_onClick();
+    }
+
+   private:
+    std::function<void()> m_onClick;
+};
+}  // namespace
+
+QString literal(QString text)
+{
+    return text.replace('&', "&&");
+}
+
 QWidget* disclosure(const QString& label, const QString& description, std::function<void()> onClick, QWidget* parent)
 {
-    auto* button = new QPushButton(parent);
-    button->setObjectName("wraithDisclosure");
-    button->setCursor(Qt::PointingHandCursor);
-    auto* layout = new QHBoxLayout(button);
-    layout->setContentsMargins(14, 10, 14, 10);
+    auto* row = new ClickableFrame(std::move(onClick), parent);
+    row->setObjectName("wraithDisclosure");
+    auto* layout = new QHBoxLayout(row);
+    layout->setContentsMargins(14, 12, 14, 12);
+    layout->setSpacing(12);
     auto* text = new QVBoxLayout();
-    text->setSpacing(2);
-    auto* name = new QLabel(label, button);
+    text->setSpacing(3);
+    auto* name = new QLabel(label, row);
     name->setStyleSheet("font-weight: 600; background: transparent;");
-    auto* desc = muted(description, button);
+    auto* desc = muted(description, row);
+    desc->setWordWrap(true);
     desc->setStyleSheet("background: transparent;");
     text->addWidget(name);
     text->addWidget(desc);
     layout->addLayout(text, 1);
-    auto* arrow = new QLabel(QString::fromUtf8("›"), button);
+    auto* arrow = new QLabel(QString::fromUtf8("›"), row);
     arrow->setStyleSheet(QString("font-size: 18pt; color: %1; background: transparent;").arg(Color::textFaint));
     layout->addWidget(arrow);
-    button->setMinimumHeight(64);
-    for (auto* child : button->findChildren<QLabel*>())
-        child->setAttribute(Qt::WA_TransparentForMouseEvents);
-    QObject::connect(button, &QPushButton::clicked, button, onClick);
-    return button;
+    return row;
 }
 
 QWidget* memorySlider(int valueMiB, std::function<void(int)> onChange, QWidget* parent)

@@ -146,6 +146,16 @@ void VersionListView::paintInfoLabel(QPaintEvent* event) const
     QColor background = QApplication::palette().color(QPalette::WindowText);
     QColor foreground = QApplication::palette().color(QPalette::Base);
     foreground.setAlpha(190);
+    // Wraith: inside the Wraith shell the hint is a quiet note rather than an inverted block
+    for (const QWidget* ancestor = this; ancestor; ancestor = ancestor->parentWidget()) {
+        if (ancestor->objectName() == "wraithShell") {
+            background = QColor("#1d2130");
+            foreground = QColor("#9aa1b5");
+            font.setPointSize(12);
+            font.setBold(false);
+            break;
+        }
+    }
     painter.setFont(font);
     auto fontMetrics = painter.fontMetrics();
     auto textRect = fontMetrics.boundingRect(innerBounds, Qt::AlignHCenter | Qt::TextWordWrap, emptyString);

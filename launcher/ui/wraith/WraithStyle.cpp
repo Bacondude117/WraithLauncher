@@ -17,8 +17,12 @@
  */
 #include "WraithStyle.h"
 
+#include <QBuffer>
+#include <QFile>
 #include <QFrame>
+#include <QImageReader>
 #include <QMainWindow>
+#include <QPixmap>
 #include <QToolBar>
 #include <QToolButton>
 
@@ -49,10 +53,13 @@ QString shellStyleSheet()
 #wraithHost QPushButton#wraithPill { border-radius: 15px; padding: 5px 14px; background-color: transparent; border: 1px solid %border%; color: %textMuted%; }
 #wraithHost QPushButton#wraithPill:hover { color: %text%; background-color: %surface%; }
 #wraithHost QPushButton#wraithPill:checked { background-color: %accent%; color: %accentText%; border-color: %accent%; font-weight: 600; }
+#wraithHost QPushButton#wraithNav { background: transparent; border: none; border-radius: 10px; text-align: left; padding: 10px 14px; color: %textMuted%; font-size: 10.5pt; }
+#wraithHost QPushButton#wraithNav:hover { background-color: %surface%; color: %text%; }
+#wraithHost QPushButton#wraithNav:checked { background-color: rgba(127, 219, 234, 30); color: %text%; font-weight: 600; }
 #wraithHost QPushButton#wraithLink { background: transparent; border: none; color: %violet%; padding: 2px 0px; text-align: left; }
 #wraithHost QPushButton#wraithLink:hover { color: #c3b3ff; }
-#wraithHost QPushButton#wraithDisclosure { background: transparent; border: none; border-radius: 10px; text-align: left; padding: 10px 12px; font-weight: 600; }
-#wraithHost QPushButton#wraithDisclosure:hover { background-color: %surface%; }
+#wraithHost QFrame#wraithCard QFrame#wraithDisclosure { background: transparent; border: none; border-radius: 10px; }
+#wraithHost QFrame#wraithCard QFrame#wraithDisclosure:hover { background-color: %surfaceHover%; }
 #wraithHost QPushButton::menu-indicator, #wraithHost QToolButton::menu-indicator { width: 0px; image: none; }
 #wraithHost QToolButton::menu-button { border: none; width: 16px; }
 
@@ -141,6 +148,27 @@ QString shellStyleSheet()
     for (const auto& [key, value] : tokens)
         css.replace(key, value);
     return css;
+}
+
+QIcon glyphIcon(const QString& name, const QString& color, const QString& checkedColor)
+{
+    QFile file(QString(":/wraith/icons/%1.svg").arg(name));
+    if (!file.open(QIODevice::ReadOnly))
+        return {};
+    const QByteArray svg = file.readAll();
+    auto render = [&svg](const QString& tint) {
+        QByteArray tinted = svg;
+        tinted.replace("currentColor", tint.toUtf8());
+        QBuffer buffer(&tinted);
+        QImageReader reader(&buffer, "svg");
+        reader.setScaledSize(QSize(48, 48));
+        return QPixmap::fromImage(reader.read());
+    };
+    QIcon icon;
+    icon.addPixmap(render(color), QIcon::Normal, QIcon::Off);
+    if (!checkedColor.isEmpty())
+        icon.addPixmap(render(checkedColor), QIcon::Normal, QIcon::On);
+    return icon;
 }
 
 void modernizePage(QWidget* page)

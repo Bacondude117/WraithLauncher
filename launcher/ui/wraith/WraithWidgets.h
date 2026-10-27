@@ -45,7 +45,10 @@ class Card : public QFrame {
 QLabel* title(const QString& text, QWidget* parent, int pointSize = 18);
 QLabel* muted(const QString& text, QWidget* parent);
 
-/** Wide "Name  description  >" button used for Advanced sections. */
+/** Text for a button label with "&" shown literally instead of as a mnemonic marker. */
+QString literal(QString text);
+
+/** Wide "Name  description  >" row used for Advanced sections. */
 QWidget* disclosure(const QString& label, const QString& description, std::function<void()> onClick, QWidget* parent);
 
 /** Memory slider (MiB, 256 MiB steps) with a live "4.0 GB" label; calls onChange when released. */
