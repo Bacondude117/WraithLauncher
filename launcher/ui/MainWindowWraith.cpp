@@ -27,8 +27,10 @@
 
 #include "Application.h"
 #include "InstanceList.h"
+#include "InstanceTask.h"
 #include "minecraft/MinecraftInstance.h"
 #include "settings/SettingsObject.h"
+#include "ui/dialogs/NewInstanceDialog.h"
 #include "ui/wraith/WraithShell.h"
 
 void MainWindow::setupWraithShell()
@@ -68,6 +70,21 @@ void MainWindow::wraithShowSettings(const QString& page)
 {
     APPLICATION->showMainWindow();
     m_wraithShell->showSettings(page);
+}
+
+void MainWindow::wraithNewInstanceDialog(const QString& group, const QString& pageId, const QString& searchTerm)
+{
+    // same flow as addInstance(), opened on a chosen page
+    const QString groupName = group.isEmpty() ? APPLICATION->settings()->get("LastUsedGroupForNewInstance").toString() : group;
+    NewInstanceDialog dialog(groupName, QString(), {}, this);
+    if (!pageId.isEmpty())
+        dialog.selectPage(pageId, searchTerm);
+    if (!dialog.exec())
+        return;
+    APPLICATION->settings()->set("LastUsedGroupForNewInstance", dialog.instGroup());
+    APPLICATION->settings()->set("LastUsedInstDirForNewInstance", dialog.instDir());
+    if (InstanceTask* task = dialog.extractTask())
+        instanceFromInstanceTask(task);
 }
 
 void MainWindow::wraithLeavePage()

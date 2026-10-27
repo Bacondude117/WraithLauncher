@@ -43,6 +43,7 @@
 #include "ui/MainWindow.h"
 
 #include "WraithBackend.h"
+#include "WraithBrowse.h"
 #include "WraithInstancePage.h"
 #include "WraithNewInstance.h"
 #include "WraithSettingsPage.h"
@@ -70,6 +71,7 @@ Shell::Shell(MainWindow* window, QWidget* parent) : QWidget(parent), m_window(wi
     m_engine->addImageProvider("wraith", new ImageProvider());
     m_backend = new Backend(this, window);
     m_engine->rootContext()->setContextProperty("backend", m_backend);
+    m_engine->rootContext()->setContextProperty("browseModel", new BrowseModel(this));
 
     auto* layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);

@@ -826,6 +826,8 @@ SET(LAUNCHER_SOURCES
     # Wraith shell (Qt Quick UI over MainWindow's actions)
     ui/wraith/WraithBackend.cpp
     ui/wraith/WraithBackend.h
+    ui/wraith/WraithBrowse.cpp
+    ui/wraith/WraithBrowse.h
     ui/wraith/WraithInstanceModel.cpp
     ui/wraith/WraithInstanceModel.h
     ui/wraith/WraithInstancePage.cpp

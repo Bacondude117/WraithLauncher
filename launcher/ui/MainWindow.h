@@ -88,10 +88,8 @@ class MainWindow : public QMainWindow {
     bool wraithShellActive() const { return m_wraithShell != nullptr; }
     Wraith::Shell* wraithShell() const { return m_wraithShell; }
     void wraithSelectInstance(const QString& id) { setSelectedInstanceById(id); }
-    void wraithAddInstance(const QString& url = QString(), const QMap<QString, QString>& extra = {}, const QString& pageId = QString())
-    {
-        addInstance(url, extra, pageId);
-    }
+    /** Prism's full New Instance dialog, optionally on a page (e.g. "modrinth") with a search filled in. */
+    void wraithNewInstanceDialog(const QString& group = QString(), const QString& pageId = QString(), const QString& searchTerm = QString());
     void wraithInstallFromTask(InstanceTask* task) { instanceFromInstanceTask(task); }
     void wraithRenameInstance(MinecraftInstance* instance, const QString& name);
     void wraithShowInstance(MinecraftInstance* instance, const QString& page);
@@ -239,7 +237,7 @@ class MainWindow : public QMainWindow {
 
     void updateInstanceToolBarOrientation(Qt::Orientation orientation);
 
-    void addInstance(const QString& url = QString(), const QMap<QString, QString>& extra_info = {}, const QString& pageId = QString());
+    void addInstance(const QString& url = QString(), const QMap<QString, QString>& extra_info = {});
 
     // Wraith: mounts the Wraith shell over the classic layout unless the classic layout is chosen; see MainWindowWraith.cpp
     void setupWraithShell();

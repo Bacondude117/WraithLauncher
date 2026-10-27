@@ -23,9 +23,9 @@
 
 namespace Wraith::NewInstanceSheet {
 
-void show(Shell* shell, const QString&)
+void show(Shell* shell, const QString& group)
 {
-    shell->window()->wraithAddInstance();
+    shell->window()->wraithNewInstanceDialog(group);
 }
 
 }  // namespace Wraith::NewInstanceSheet

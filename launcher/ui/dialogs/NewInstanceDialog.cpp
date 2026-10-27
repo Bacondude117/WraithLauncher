@@ -222,8 +222,12 @@ QList<BasePage*> NewInstanceDialog::getPages()
     return pages;
 }
 
-void NewInstanceDialog::selectPage(const QString& pageId)
+void NewInstanceDialog::selectPage(const QString& pageId, const QString& searchTerm)
 {
+    if (!searchTerm.isEmpty()) {
+        if (auto* page = dynamic_cast<ModpackProviderBasePage*>(m_container->getPage(pageId)))
+            page->setSearchTerm(searchTerm);
+    }
     m_container->selectPage(pageId);
 }
 

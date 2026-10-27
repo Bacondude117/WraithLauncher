@@ -889,7 +889,7 @@ void MainWindow::on_actionCopyInstance_triggered()
     runModalTask(task.get());
 }
 
-void MainWindow::addInstance(const QString& url, const QMap<QString, QString>& extra_info, const QString& pageId)
+void MainWindow::addInstance(const QString& url, const QMap<QString, QString>& extra_info)
 {
     QString groupName;
     do {
@@ -910,8 +910,6 @@ void MainWindow::addInstance(const QString& url, const QMap<QString, QString>& e
     }
 
     NewInstanceDialog newInstDlg(groupName, url, extra_info, this);
-    if (!pageId.isEmpty())
-        newInstDlg.selectPage(pageId);
     if (!newInstDlg.exec())
         return;
 

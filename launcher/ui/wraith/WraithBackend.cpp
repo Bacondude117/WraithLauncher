@@ -375,7 +375,7 @@ void Backend::newInstance(const QString& group)
 
 void Backend::advancedNewInstance(const QString& pageId)
 {
-    m_window->wraithAddInstance({}, {}, pageId);
+    m_window->wraithNewInstanceDialog({}, pageId);
 }
 
 void Backend::importInstance()
