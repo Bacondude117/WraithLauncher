@@ -104,10 +104,11 @@ QString WraithTheme::appStyleSheet()
     // Kept deliberately small: Fusion + palette does most of the work, QSS only adds rounding and spacing.
     return QStringLiteral(R"(
 QToolTip { color: #e6e9f2; background-color: #252833; border: 1px solid #b4a7ff; border-radius: 4px; padding: 4px; }
-QLineEdit, QPlainTextEdit, QTextEdit, QSpinBox, QComboBox {
+QLineEdit, QPlainTextEdit, QTextEdit, QComboBox {
     border: 1px solid #343846; border-radius: 6px; padding: 1px 4px; background-color: #15171d;
 }
-QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus, QSpinBox:focus, QComboBox:focus { border-color: #7fdbea; }
+QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus, QComboBox:focus { border-color: #7fdbea; }
+QAbstractSpinBox QLineEdit { border: none; padding: 0; }
 QPushButton {
     border: 1px solid #343846; border-radius: 6px; padding: 5px 12px; background-color: #252833;
 }
