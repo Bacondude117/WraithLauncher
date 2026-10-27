@@ -8,12 +8,12 @@ Each step is small, builds cleanly (`wraith\build-windows.cmd build`), passes te
 - [x] 0.2 CLAUDE.md, PLAN.md, DECISIONS.md, PROGRESS.md, SETUP_KEYS.md, `wraith/build-windows.cmd`.
 
 ## Phase 1 — Branding
-- [ ] 1.1 Names: `Launcher_CommonName=WraithLauncher`, `DisplayName=Wraith Launcher`, `ENVName=WRAITHLAUNCHER`,
+- [x] 1.1 Names: `Launcher_CommonName=WraithLauncher`, `DisplayName=Wraith Launcher`, `ENVName=WRAITHLAUNCHER`,
       AppID `io.github.wraithlauncher.WraithLauncher`, binary `wraithlauncher`; rename the matching
       `program_info/` files; fix the few hard-coded strings (Q_INIT_RESOURCE, updater messages, man page,
       installer, .desktop/metainfo). Test: exe is `wraithlauncher.exe`, title says Wraith Launcher,
       data dir is `%APPDATA%\WraithLauncher`, config `wraithlauncher.cfg`.
-- [ ] 1.2 Keys & URLs: blank MSA client ID / CurseForge key / Imgur ID placeholders (SETUP_KEYS.md), disable
+- [x] 1.2 Keys & URLs (done together with 1.1): blank MSA client ID / CurseForge key / Imgur ID placeholders (SETUP_KEYS.md), disable
       the self-updater feed (no Wraith releases yet), clear Prism community links; keep Prism meta server.
       Test: builds; CurseForge page hidden when key empty; MS login reports missing client ID.
 - [ ] 1.3 Original ghost icon: new SVG + regenerated .ico/.png (scripted with Python, no external tools);

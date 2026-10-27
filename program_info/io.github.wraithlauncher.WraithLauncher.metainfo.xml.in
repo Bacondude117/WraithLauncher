@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop">
+  <id>@Launcher_AppID@</id>
+  <name>Wraith Launcher</name>
+  <summary>Ghost-themed custom Minecraft launcher, forked from Prism Launcher</summary>
+  <developer id="io.github.wraithlauncher">
+    <name>Wraith Launcher Contributors</name>
+  </developer>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <description>
+    <p>Wraith Launcher is a custom launcher for Minecraft based on Prism Launcher. It is not affiliated with or endorsed by the Prism Launcher project.</p>
+    <p>Features:</p>
+    <ul>
+      <li>Search CurseForge, Modrinth, ATLauncher, FTB and Technic modpacks from one page</li>
+      <li>Easily install game modifications, such as Fabric, Forge and Quilt</li>
+      <li>Easily install and update modpacks from the Launcher</li>
+      <li>Turn an instance into a local server for friends</li>
+      <li>Manage worlds and resource packs from the launcher</li>
+      <li>Isolate Minecraft instances to keep everything clean</li>
+      <li>Customize the launcher with themes, and more</li>
+    </ul>
+  </description>
+  <releases>
+    <release version="@Launcher_VERSION_NAME@" date="@Launcher_BUILD_TIMESTAMP@"></release>
+  </releases>
+  <url type="vcs-browser">https://github.com/PrismLauncher/PrismLauncher</url>
+  <content_rating type="oars-1.1">
+    <content_attribute id="violence-fantasy">moderate</content_attribute>
+    <content_attribute id="social-chat">intense</content_attribute>
+  </content_rating>
+  <launchable type="desktop-id">@Launcher_AppID@.desktop</launchable>
+</component>

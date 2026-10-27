@@ -30,6 +30,16 @@ there is no Wraith meta server. The GitHub updater would "update" Wraith into Pr
 blanked. Discord/Matrix/Reddit/news/bug-tracker links point at Prism's community — cleared so we don't send
 Wraith users to Prism support channels. Help wiki still points at Prism's docs (accurate, and labelled).
 
+## D5b — Things deliberately left with Prism names
+- Java launcher package `org.prismlauncher.*` (internal, never user-visible; renaming breaks rebases).
+- Disabled-updater strings/filenames (`prism_launcher_update.log`, "Prism Launcher updater"): the updater is
+  not built without `Launcher_UPDATER_GITHUB_REPO`, and they are translated strings.
+- "Prism Launcher (zip)" export format: names Prism's file format, which Wraith still produces.
+- `prismlauncher://` URLs are still *accepted* in `MainWindow` for compatibility, but the installer,
+  `.desktop` and macOS plist no longer *register* that scheme, so a real Prism install keeps it.
+- Unused Prism logo art in `program_info/` (`*.logo*.svg`, `bigsur`, `Social`, `Source`) stays untouched
+  to keep rebases clean; nothing in the build installs it.
+
 ## D6 — API keys become empty placeholders
 Prism's MSA client ID, CurseForge key and Imgur client ID were issued to Prism and CurseForge's terms
 require derivatives to use their own. Defaults are now empty; the launcher already supports override via
