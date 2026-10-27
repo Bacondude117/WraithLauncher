@@ -22,6 +22,8 @@ Gotchas:
 - If a newer VS is also installed, vcpkg may build deps with it and linking fails
   (`__std_find_first_not_of_trivial_pos_1`). The script pins `VCPKG_VISUAL_STUDIO_PATH`.
 - Qt's `bin` must be on PATH to run tests or the exe from `build\Debug`.
+- Windows PowerShell 5.1 `Get-Content`/`Set-Content` default to ANSI and corrupt UTF-8 docs (— becomes â€”).
+  Edit docs with an editor or `python -X utf8`, or pass `-Encoding utf8` explicitly.
 - Never run the `FileSystem` test: it elevates `*_filelink.exe` to create symlinks, which triggers UAC
   prompts in a loop on a machine without Developer Mode.
 

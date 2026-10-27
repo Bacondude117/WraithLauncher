@@ -1,4 +1,4 @@
-﻿# Progress
+# Progress
 
 Resume from the first unchecked step in PLAN.md.
 
@@ -27,8 +27,8 @@ Resume from the first unchecked step in PLAN.md.
 
 ## Known issues
 - `FileSystem` test needs symlink privilege (admin or Developer Mode). Excluded in the helper script.
-  Running it without privilege causes looping UAC prompts â€” don't.
-- CMake configure prints "'vswhere.exe' is not recognized" â€” harmless (vcvars probing).
+  Running it without privilege causes looping UAC prompts — don't.
+- CMake configure prints "'vswhere.exe' is not recognized" — harmless (vcvars probing).
 - After changing CMake CACHE defaults, delete `build\CMakeCache.txt` before configuring.
 - After changing the `.ico`, delete `build\launcher\CMakeFiles\WraithLauncher.dir\Debug\__\program_info\*.rc.res`
   (Ninja doesn't track the icon as a dependency of the resource script).
