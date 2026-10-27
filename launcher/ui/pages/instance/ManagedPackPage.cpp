@@ -310,7 +310,7 @@ void ModrinthManagedPackPage::update()
     }
     auto version = m_pack.versions.at(index);
 
-    updatePack(version.downloadUrl, true, version.fileId.toString(), version.version);
+    updatePack(version.downloadUrl, true, version.fileId.toString(), version.version, version.hashType, version.hash);
 }
 
 void ModrinthManagedPackPage::updateFromFile()
@@ -440,7 +440,7 @@ void FlameManagedPackPage::update()
     }
     auto version = m_pack.versions.at(index);
 
-    updatePack(version.downloadUrl, true, version.fileId.toString(), version.version);
+    updatePack(version.downloadUrl, true, version.fileId.toString(), version.version, version.hashType, version.hash);
 }
 
 void FlameManagedPackPage::updateFromFile()
@@ -453,7 +453,12 @@ void FlameManagedPackPage::updateFromFile()
     updatePack(output, false);
 }
 
-void ManagedPackPage::updatePack(const QUrl& url, bool trusted, const QString& versionID, const QString& versionName)
+void ManagedPackPage::updatePack(const QUrl& url,
+                                 bool trusted,
+                                 const QString& versionID,
+                                 const QString& versionName,
+                                 const QString& hashAlgo,
+                                 const QString& hash)
 {
     QString confirmMessage;
     if (versionName.isEmpty()) {
@@ -482,6 +487,8 @@ void ManagedPackPage::updatePack(const QUrl& url, bool trusted, const QString& v
     extraInfo.insert("pack_id", m_inst->getManagedPackID());
     extraInfo.insert("pack_version_id", versionID);
     extraInfo.insert("original_instance_id", m_inst->id());
+    extraInfo.insert("file_hash", hash);  // Wraith: verified by InstanceImportTask
+    extraInfo.insert("file_hash_algo", hashAlgo);
 
     auto* extracted = new InstanceImportTask(url, trusted, this, std::move(extraInfo));
 

@@ -54,6 +54,8 @@
 #include <FileSystem.h>
 #include <QSaveFile>
 
+#include "security/SecretStore.h"
+
 enum AccountListVersion { MojangMSA = 3 };
 
 AccountList::AccountList(QObject* parent) : QAbstractListModel(parent)
@@ -446,6 +448,15 @@ bool AccountList::loadList()
     QByteArray jsonData = file.readAll();
     file.close();
 
+    // Wraith: accounts.json is encrypted where the platform supports it (security/SecretStore.h)
+    if (auto plain = Wraith::SecretStore::unprotect(jsonData)) {
+        jsonData = std::move(*plain);
+    } else {
+        qCritical() << "Can't decrypt the account list (was it copied from another user or computer?). Keeping it as accounts-locked.json.";
+        file.rename(QFileInfo(m_listFilePath).absoluteDir().filePath("accounts-locked.json"));
+        return false;
+    }
+
     auto jsonDoc = Json::requireObject(jsonData, "account list file");
 
     // Fail if the JSON is invalid or the root is not an object.
@@ -552,7 +563,7 @@ bool AccountList::saveList()
     }
 
     // Write the JSON to the file.
-    file.write(doc.toJson());
+    file.write(Wraith::SecretStore::protect(doc.toJson()));  // Wraith: never store tokens in plain text
     file.setPermissions(QFile::ReadOwner | QFile::WriteOwner | QFile::ReadUser | QFile::WriteUser);
     if (file.commit()) {
         qDebug() << "Saved account list to" << m_listFilePath;

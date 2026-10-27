@@ -21,6 +21,7 @@
 #include <QSet>
 #include <QStringList>
 
+#include "modplatform/ftb/FTBPackManifest.h"
 #include "modplatform/unified/UnifiedSearch.h"
 #include "net/NetJob.h"
 
@@ -30,8 +31,9 @@ class Shell;
 
 /**
  * The Browse page's model: the unified search (every modpack source at once) with source filters and sorting,
- * plus installing. Modrinth packs install directly (version list + Prism's import task); the other sources open
- * their original page with the search filled in, because their install flows have source-specific steps.
+ * plus installing. Every source gets the same treatment: a version list and a direct Install that runs that
+ * source's own Prism install task (import task with hash check, FTB, ATLauncher, Technic Solder/zip).
+ * The original per-source pages stay reachable from "Open in <source> page".
  */
 class BrowseModel : public QAbstractListModel {
     Q_OBJECT
@@ -64,16 +66,20 @@ class BrowseModel : public QAbstractListModel {
     Q_INVOKABLE void setSourceEnabled(const QString& source, bool enabled);
     /** Details for the side panel: name, author, summary, icon, downloads, hits [{ source, url, id }]. */
     Q_INVOKABLE QVariantMap details(int row) const;
-    Q_INVOKABLE void loadVersions(int row);
-    Q_INVOKABLE void installModrinth(int row, const QString& versionId);
+    /** Fetch the versions of `source`'s entry for this pack; answers with versionsLoaded/versionsFailed. */
+    Q_INVOKABLE void loadVersions(int row, const QString& source);
+    Q_INVOKABLE void install(int row, const QString& source, const QString& versionId);
+    /** Open the original per-source page with the pack searched (for source-specific extras). */
     Q_INVOKABLE void installWith(int row, const QString& source);
     Q_INVOKABLE void openAdvanced();
+    /** Whether Browse should list popular packs when opened (Settings: WraithBrowseLoadPopular). */
+    Q_INVOKABLE bool loadPopularOnOpen() const;
 
    signals:
     void statusChanged();
     void filtersChanged();
-    void versionsLoaded(int row, const QVariantList& versions);
-    void versionsFailed(int row, const QString& error);
+    void versionsLoaded(int row, const QString& source, const QVariantList& versions);
+    void versionsFailed(int row, const QString& source, const QString& error);
 
    private:
     void rebuild();
@@ -85,7 +91,8 @@ class BrowseModel : public QAbstractListModel {
     QString m_sortMode = "relevance";
     NetJob::Ptr m_versionsJob;
     NetJob::Ptr m_iconJob;
-    QHash<QString, QVariantMap> m_versions;  // Modrinth version id -> { url, name, ... }
+    QHash<QString, QVariantMap> m_versions;  // "<source>|<version id>" -> { url, number, hash, ... }
+    QHash<QString, FTB::Modpack> m_ftbPacks;  // FTB pack id -> details (the install task needs them)
 };
 
 }  // namespace Wraith

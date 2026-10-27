@@ -28,6 +28,7 @@ set(TEST_SOURCES
     Commandline_test.cpp
     UnifiedPack_test.cpp
     ServerModFilter_test.cpp
+    WraithValues_test.cpp
 )
 
 # NOTE(@getchoo): Very funny way of aliasing the Qt generated `main` test functions to respective filenames

@@ -67,6 +67,7 @@
 #include "minecraft/World.h"
 #include "minecraft/mod/tasks/LocalResourceParse.h"
 #include "net/ApiRequest.h"
+#include "net/WraithChecksum.h"
 #include "ui/dialogs/UntrustedModsDialog.h"
 #include "ui/pages/modplatform/OptionalModDialog.h"
 
@@ -639,6 +640,9 @@ void FlameCreationTask::setupDownloadJob()
         if (!result.version.downloadUrl.isEmpty()) {
             qDebug() << "Will download" << result.version.downloadUrl << "to" << *path;
             auto dl = Net::ApiRequest::makeFile(result.version.downloadUrl, *path);
+            // Wraith: CurseForge publishes file hashes; verify them like the other sources do
+            if (auto* validator = Net::makeChecksumValidator(result.version.hashType, result.version.hash))
+                dl->addValidator(validator);
             m_filesJob->addNetAction(dl);
         }
     }

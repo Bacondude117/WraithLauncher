@@ -137,6 +137,18 @@ void Request::executeTask()
         return;
     }
 
+#ifdef LAUNCHER_APPLICATION
+    // Wraith: HTTPS only. Plain http URLs (old metadata, third-party pack hosts) are upgraded to https; a host
+    // without https then fails instead of downloading in the clear. Advanced users can opt out
+    // (Settings → Network → APIs, "WraithAllowInsecureHttp").
+    if (m_url.scheme() == "http" && !APPLICATION->settings()->get("WraithAllowInsecureHttp").toBool()) {
+        qCDebug(m_logCat) << getUid().toString() << "Upgrading to https:" << m_url.toString();
+        m_url.setScheme("https");
+        if (m_url.port() == 80)
+            m_url.setPort(-1);
+    }
+#endif
+
     QNetworkRequest request(m_url);
     auto result = m_sink->init(request);
     if (!result) {

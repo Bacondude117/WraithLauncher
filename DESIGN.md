@@ -17,8 +17,10 @@ accounts, Java, every advanced option) is Prism's, unchanged.
 - The **shell** (`launcher/ui/wraith/`) is a widget with a sidebar and a page stack. The primary screens are written
   in **QML** (Qt Quick + Qt Quick Controls Basic + QtQuick.Effects) and hosted in `QQuickWidget`s that share one
   `QQmlEngine`: Sidebar, Home, Library, Browse, Servers, the instance header, and the Content and Worlds lists.
-  QML gives real hover/press states, animated transitions, blurred cover art and smooth scrolling, which Widgets
-  resist.
+  QML gives real hover/press states, animated transitions and smooth scrolling, which Widgets resist.
+- **Rendering is light by default** (core value; DECISIONS D22): Qt Quick runs on its software renderer, and no QML
+  uses shader effects. Cover art (the blurred, darkened icon) is drawn once in C++ by the image provider
+  (`image://wraith/cover/...`). The GPU renderer is an opt-in setting.
 - **Power-user surfaces reuse the original Widgets pages** (`BasePage` subclasses: mod manager, components, logs,
   per-instance overrides, global settings pages). They are embedded *inside* the shell (never as dialogs) by
   `WraithPageHost`, which implements `BasePageContainer`. They are restyled by the Wraith stylesheet: their side

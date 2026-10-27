@@ -76,6 +76,9 @@ class FriendServer : public QObject {
 
     QStringList consoleHistory() const { return m_console; }
 
+    /** This computer's private (LAN) IPv4 address, for "join at" hints; "localhost" when there is none. */
+    static QString lanAddress();
+
     /** (Re)build the server folder: server software, mods, configs. EULA must be accepted by the user. */
     void setup(bool eulaAccepted);
     void start();
@@ -107,7 +110,8 @@ class FriendServer : public QObject {
     void copyFiles();
     void finishSetup();
     void fetchJson(const QString& url, std::function<void(const QByteArray&)> onSuccess);
-    void downloadFile(const QString& url, const QString& path, std::function<void()> onSuccess);
+    void downloadFile(const QString& url, const QString& path, const QString& hashAlgo, const QString& hash, std::function<void()> onSuccess);
+    void downloadMavenFile(const QString& url, const QString& path, std::function<void()> onSuccess);
 
     void onProcessOutput();
     void onProcessFinished(int exitCode, QProcess::ExitStatus status);
@@ -117,6 +121,7 @@ class FriendServer : public QObject {
     State m_state = State::NotSetUp;
     bool m_eulaAccepted = false;
     int m_port = 25565;
+    int m_writtenPort = -1;  ///< the port Wraith last wrote to server.properties (to detect hand edits)
     int m_memoryMb = 4096;
     QSet<QString> m_included;
     QSet<QString> m_excluded;

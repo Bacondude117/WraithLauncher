@@ -23,11 +23,22 @@
 #include <QJsonObject>
 #include <QStandardPaths>
 
+#include <QRegularExpression>
+#include <QTimer>
+
 #include "Application.h"
+#include "BuildConfig.h"
+#include "DesktopServices.h"
 #include "InstanceImportTask.h"
 #include "icons/IconList.h"
+#include "modplatform/atlauncher/ATLPackInstallTask.h"
+#include "modplatform/ftb/FTBPackInstallTask.h"
+#include "modplatform/technic/SingleZipPackInstallTask.h"
+#include "modplatform/technic/SolderPackInstallTask.h"
+#include "modplatform/technic/SolderPackManifest.h"
 #include "net/ApiRequest.h"
 #include "ui/MainWindow.h"
+#include "ui/pages/modplatform/atlauncher/AtlUserInteractionSupportImpl.h"
 #include "ui/widgets/PackCardDelegate.h"
 
 #include "WraithShell.h"
@@ -71,6 +82,18 @@ BrowseModel::BrowseModel(Shell* shell) : QAbstractListModel(shell), m_shell(shel
         emit statusChanged();
     });
     connect(m_search, &UnifiedSearch::finished, this, &BrowseModel::statusChanged);
+
+    // Sources the user switched off stay off (and are not contacted) across restarts.
+    for (const auto& name : APPLICATION->settings()->get("WraithBrowseSources").toString().split(',', Qt::SkipEmptyParts)) {
+        if (auto source = sourceByName(name))
+            m_disabled.insert(*source);
+    }
+    m_search->setSkippedSources(m_disabled);
+}
+
+bool BrowseModel::loadPopularOnOpen() const
+{
+    return APPLICATION->settings()->get("WraithBrowseLoadPopular").toBool();
 }
 
 QHash<int, QByteArray> BrowseModel::roleNames() const
@@ -183,6 +206,16 @@ void BrowseModel::setSourceEnabled(const QString& name, bool enabled)
         m_disabled.remove(*source);
     else
         m_disabled.insert(*source);
+    QStringList names;
+    for (auto s : allSources()) {
+        if (m_disabled.contains(s))
+            names.append(sourceName(s));
+    }
+    APPLICATION->settings()->set("WraithBrowseSources", names.join(','));
+    m_search->setSkippedSources(m_disabled);
+    // a newly enabled source hasn't been asked yet
+    if (enabled && !m_search->packs().isEmpty())
+        m_search->search(m_search->query());
     rebuild();
     emit statusChanged();
 }
@@ -193,9 +226,17 @@ QVariantMap BrowseModel::details(int row) const
         return {};
     const auto& pack = m_visible.at(row);
     QVariantList hits;
-    for (const auto& hit : pack.hits)
+    // The default install source is the one that ranked this pack best for this search, not a favoured source.
+    const SourceHit* best = nullptr;
+    for (const auto& hit : pack.hits) {
+        if (m_disabled.contains(hit.source))
+            continue;
         hits.append(QVariantMap{ { "source", sourceName(hit.source) }, { "url", hit.websiteUrl }, { "id", hit.id }, { "name", hit.name } });
-    return { { "name", pack.name },
+        if (!best || hit.rank < best->rank)
+            best = &hit;
+    }
+    return { { "defaultSource", best ? sourceName(best->source) : QString() },
+             { "name", pack.name },
              { "author", pack.author },
              { "summary", pack.summary },
              { "icon", pack.iconUrl },
@@ -203,80 +244,267 @@ QVariantMap BrowseModel::details(int row) const
              { "hits", hits } };
 }
 
-void BrowseModel::loadVersions(int row)
+// ---------------------------------------------------------------- versions (one code path per source, same UI for all)
+
+namespace {
+QString titleCaseLoader(QString name)
 {
-    if (row < 0 || row >= m_visible.size())
-        return;
-    const auto* hit = m_visible.at(row).hit(Source::Modrinth);
-    if (!hit)
-        return;
-    m_versionsJob = makeShared<NetJob>("Wraith::ModrinthVersions", APPLICATION->network());
-    auto [action, response] = Net::ApiRequest::makeByteArray(QUrl(QString("https://api.modrinth.com/v2/project/%1/version").arg(hit->id)));
-    m_versionsJob->addNetAction(action);
-    connect(m_versionsJob.get(), &Task::succeeded, this, [this, row, response] {
-        QVariantList versions;
-        for (const auto& value : QJsonDocument::fromJson(*response).array()) {
-            const auto obj = value.toObject();
-            QString url;
-            for (const auto& file : obj.value("files").toArray()) {
-                if (url.isEmpty() || file.toObject().value("primary").toBool())
-                    url = file.toObject().value("url").toString();
-            }
-            QStringList games;
-            for (const auto& game : obj.value("game_versions").toArray())
-                games.append(game.toString());
-            QStringList loaders;
-            for (const auto& loader : obj.value("loaders").toArray()) {
-                QString name = loader.toString();
-                name[0] = name[0].toUpper();
-                loaders.append(name == "Neoforge" ? "NeoForge" : name);
-            }
-            QVariantMap version{ { "id", obj.value("id").toString() },
-                                 { "name", obj.value("name").toString() },
-                                 { "number", obj.value("version_number").toString() },
-                                 { "type", obj.value("version_type").toString() },
-                                 { "minecraft", games.join(", ") },
-                                 { "loaders", loaders.join(", ") },
-                                 { "url", url } };
-            m_versions.insert(version.value("id").toString(), version);
-            versions.append(version);
-        }
-        emit versionsLoaded(row, versions);
-    });
-    connect(m_versionsJob.get(), &Task::failed, this, [this, row](const QString& reason) { emit versionsFailed(row, reason); });
-    m_versionsJob->start();
+    if (name.isEmpty())
+        return name;
+    name[0] = name[0].toUpper();
+    return name == "Neoforge" ? "NeoForge" : name;
 }
 
-void BrowseModel::installModrinth(int row, const QString& versionId)
+QString curseForgeReleaseType(int type)
 {
-    if (row < 0 || row >= m_visible.size() || !m_versions.contains(versionId))
+    switch (type) {
+        case 2:
+            return "beta";
+        case 3:
+            return "alpha";
+        default:
+            return "release";
+    }
+}
+}  // namespace
+
+void BrowseModel::loadVersions(int row, const QString& sourceName)
+{
+    auto source = sourceByName(sourceName);
+    if (row < 0 || row >= m_visible.size() || !source)
+        return;
+    const auto* hit = m_visible.at(row).hit(*source);
+    if (!hit)
+        return;
+    if (m_versionsJob)
+        m_versionsJob->abort();
+    m_versionsJob.reset();
+
+    const QString key = sourceName;
+    auto finish = [this, row, key](QList<QVariantMap> list) {
+        QVariantList versions;
+        for (auto& version : list) {
+            version.insert("source", key);
+            m_versions.insert(key + "|" + version.value("id").toString(), version);
+            versions.append(version);
+        }
+        emit versionsLoaded(row, key, versions);
+    };
+    auto fetch = [this, row, key](const QUrl& url, std::function<void(const QByteArray&)> parse) {
+        m_versionsJob = makeShared<NetJob>("Wraith::Versions", APPLICATION->network());
+        auto [action, response] = Net::ApiRequest::makeByteArray(url);
+        m_versionsJob->addNetAction(action);
+        connect(m_versionsJob.get(), &Task::succeeded, this, [response, parse] { parse(*response); });
+        connect(m_versionsJob.get(), &Task::failed, this, [this, row, key](const QString& reason) { emit versionsFailed(row, key, reason); });
+        m_versionsJob->start();
+    };
+
+    switch (*source) {
+        case Source::Modrinth:
+            fetch(QUrl(BuildConfig.MODRINTH_PROD_URL + QString("/project/%1/version").arg(hit->id)), [finish](const QByteArray& data) {
+                QList<QVariantMap> list;
+                for (const auto& value : QJsonDocument::fromJson(data).array()) {
+                    const auto obj = value.toObject();
+                    QJsonObject file;
+                    for (const auto& f : obj.value("files").toArray()) {
+                        if (file.isEmpty() || f.toObject().value("primary").toBool())
+                            file = f.toObject();
+                    }
+                    QStringList games;
+                    for (const auto& game : obj.value("game_versions").toArray())
+                        games.append(game.toString());
+                    QStringList loaders;
+                    for (const auto& loader : obj.value("loaders").toArray())
+                        loaders.append(titleCaseLoader(loader.toString()));
+                    list.append({ { "id", obj.value("id").toString() },
+                                  { "number", obj.value("version_number").toString() },
+                                  { "type", obj.value("version_type").toString() },
+                                  { "minecraft", games.join(", ") },
+                                  { "loaders", loaders.join(", ") },
+                                  { "url", file.value("url").toString() },
+                                  { "hashAlgo", "sha512" },
+                                  { "hash", file.value("hashes").toObject().value("sha512").toString() } });
+                }
+                finish(list);
+            });
+            break;
+        case Source::CurseForge:
+            fetch(QUrl(BuildConfig.FLAME_BASE_URL + QString("/mods/%1/files?pageSize=50").arg(hit->id)), [finish](const QByteArray& data) {
+                QList<QVariantMap> list;
+                for (const auto& value : QJsonDocument::fromJson(data).object().value("data").toArray()) {
+                    const auto obj = value.toObject();
+                    QString sha1;
+                    for (const auto& h : obj.value("hashes").toArray()) {
+                        if (h.toObject().value("algo").toInt() == 1)
+                            sha1 = h.toObject().value("value").toString();
+                    }
+                    QStringList games;
+                    QStringList loaders;
+                    for (const auto& v : obj.value("gameVersions").toArray()) {
+                        const QString s = v.toString();
+                        (s.isEmpty() || s.front().isDigit() ? games : loaders).append(s);
+                    }
+                    loaders.removeAll("Client");
+                    loaders.removeAll("Server");
+                    list.append({ { "id", QString::number(obj.value("id").toInteger()) },
+                                  { "number", obj.value("displayName").toString() },
+                                  { "type", curseForgeReleaseType(obj.value("releaseType").toInt()) },
+                                  { "minecraft", games.join(", ") },
+                                  { "loaders", loaders.join(", ") },
+                                  { "url", obj.value("downloadUrl").toString() },
+                                  { "hashAlgo", "sha1" },
+                                  { "hash", sha1 } });
+                }
+                finish(list);
+            });
+            break;
+        case Source::FTB:
+            fetch(QUrl(BuildConfig.FTB_API_BASE_URL + QString("/modpack/%1").arg(hit->id)), [this, finish, id = hit->id](const QByteArray& data) {
+                FTB::Modpack pack;
+                if (!FTB::loadModpack(pack, QJsonDocument::fromJson(data).object()))
+                    return finish({});
+                m_ftbPacks.insert(id, pack);
+                QList<FTB::VersionInfo> versions(pack.versions.begin(), pack.versions.end());
+                std::sort(versions.begin(), versions.end(), [](const auto& a, const auto& b) { return a.updated > b.updated; });
+                QList<QVariantMap> list;
+                // FTB's pack listing has no Minecraft/loader per version (only the install manifest does)
+                for (const auto& version : versions)
+                    list.append({ { "id", version.name }, { "number", version.name }, { "type", version.type.toLower() } });
+                finish(list);
+            });
+            break;
+        case Source::ATLauncher: {
+            // The ATLauncher index (already downloaded by the search) lists every version.
+            QList<QVariantMap> list;
+            for (const auto& pack : Unified::UnifiedSearch::atlauncherPacks()) {
+                if (QString::number(pack.id) != hit->id)
+                    continue;
+                for (const auto& version : pack.versions)
+                    list.append({ { "id", version.version }, { "number", version.version }, { "type", "release" },
+                                  { "minecraft", version.minecraft }, { "name", pack.name } });
+            }
+            QTimer::singleShot(0, this, [finish, list] { finish(list); });
+            break;
+        }
+        case Source::Technic:
+            fetch(QUrl(QString("%1modpack/%2?build=%3").arg(BuildConfig.TECHNIC_API_BASE_URL, hit->id, BuildConfig.TECHNIC_API_BUILD)),
+                  [this, finish, row, key, slug = hit->id](const QByteArray& data) {
+                      const auto obj = QJsonDocument::fromJson(data).object();
+                      const QString minecraft = obj.value("minecraft").toString();
+                      if (obj.value("url").isString() && !obj.value("url").toString().isEmpty()) {
+                          // a single zip: only its current version can be installed
+                          finish({ { { "id", obj.value("version").toString() },
+                                     { "number", obj.value("version").toString() },
+                                     { "type", "release" },
+                                     { "minecraft", minecraft },
+                                     { "url", obj.value("url").toString() } } });
+                          return;
+                      }
+                      QString solder = obj.value("solder").toString();
+                      while (solder.endsWith('/'))
+                          solder.chop(1);
+                      if (solder.isEmpty())
+                          return finish({});
+                      // a Solder pack: ask its Solder server for the builds
+                      QTimer::singleShot(0, this, [this, finish, row, key, slug, solder, minecraft] {
+                          m_versionsJob = makeShared<NetJob>("Wraith::Solder", APPLICATION->network());
+                          auto [action, response] = Net::ApiRequest::makeByteArray(QUrl(QString("%1/modpack/%2").arg(solder, slug)));
+                          m_versionsJob->addNetAction(action);
+                          connect(m_versionsJob.get(), &Task::succeeded, this, [finish, response, solder, minecraft] {
+                              TechnicSolder::Pack pack;
+                              QList<QVariantMap> list;
+                              if (TechnicSolder::loadPack(pack, QJsonDocument::fromJson(*response).object())) {
+                                  for (auto i = pack.builds.size(); i-- > 0;) {
+                                      const QString build = pack.builds.at(i);
+                                      list.append({ { "id", build },
+                                                    { "number", build == pack.recommended ? build + " (recommended)" : build },
+                                                    { "type", "release" },
+                                                    { "minecraft", minecraft },
+                                                    { "solder", solder } });
+                                  }
+                              }
+                              finish(list);
+                          });
+                          connect(m_versionsJob.get(), &Task::failed, this,
+                                  [this, row, key](const QString& reason) { emit versionsFailed(row, key, reason); });
+                          m_versionsJob->start();
+                      });
+                  });
+            break;
+    }
+}
+
+// ---------------------------------------------------------------- install
+
+void BrowseModel::install(int row, const QString& sourceName, const QString& versionId)
+{
+    auto source = sourceByName(sourceName);
+    if (row < 0 || row >= m_visible.size() || !source || !m_versions.contains(sourceName + "|" + versionId))
         return;
     const auto pack = m_visible.at(row);
-    const auto* hit = pack.hit(Source::Modrinth);
-    const auto version = m_versions.value(versionId);
-    if (!hit || version.value("url").toString().isEmpty())
+    const auto* hit = pack.hit(*source);
+    const auto version = m_versions.value(sourceName + "|" + versionId);
+    if (!hit)
         return;
 
-    auto start = [this, pack, projectId = hit->id, version](const QString& iconKey) {
-        QMap<QString, QString> extra{ { "pack_id", projectId }, { "pack_version_id", version.value("id").toString() } };
-        auto* task = new InstanceImportTask(QUrl(version.value("url").toString()), true, m_shell, std::move(extra));
+    InstanceTask* task = nullptr;
+    const QString url = version.value("url").toString();
+    switch (*source) {
+        case Source::Modrinth:
+        case Source::CurseForge: {
+            if (url.isEmpty()) {
+                // CurseForge authors can forbid third-party downloads; respect that and point to their page.
+                m_shell->toast(tr("The author of %1 only allows downloads from the %2 website.").arg(pack.name, sourceName), "warning",
+                               tr("Open website"), [site = hit->websiteUrl] { DesktopServices::openUrl(QUrl(site)); });
+                return;
+            }
+            QMap<QString, QString> extra{ { "pack_id", hit->id },
+                                          { "pack_version_id", versionId },
+                                          { "file_hash", version.value("hash").toString() },
+                                          { "file_hash_algo", version.value("hashAlgo").toString() } };
+            task = new InstanceImportTask(QUrl(url), true, m_shell, std::move(extra));
+            break;
+        }
+        case Source::FTB:
+            if (!m_ftbPacks.contains(hit->id))
+                return;
+            task = new FTB::PackInstallTask(m_ftbPacks.value(hit->id), versionId, m_shell);
+            break;
+        case Source::ATLauncher:
+            task = new ATLauncher::PackInstallTask(new AtlUserInteractionSupportImpl(m_shell), version.value("name").toString(), versionId);
+            break;
+        case Source::Technic:
+            if (version.contains("solder"))
+                task = new Technic::SolderPackInstallTask(APPLICATION->network(), version.value("solder").toString(), hit->id, versionId,
+                                                          version.value("minecraft").toString());
+            else
+                task = new Technic::SingleZipPackInstallTask(QUrl(url), version.value("minecraft").toString());
+            break;
+    }
+    if (!task)
+        return;
+
+    auto start = [this, pack, task, number = version.value("number").toString()](const QString& iconKey) {
         task->setName(pack.name);
-        task->setOriginalName(pack.name, version.value("number").toString());
+        task->setOriginalName(pack.name, number);
         task->setGroup(APPLICATION->settings()->get("LastUsedGroupForNewInstance").toString());
         task->setIcon(iconKey);
         m_shell->toast(tr("Installing %1...").arg(pack.name));
         m_shell->window()->wraithInstallFromTask(task);
     };
 
-    // bring the pack's icon along, like the Modrinth page does
-    if (pack.iconUrl.isEmpty()) {
+    // bring the pack's icon along, like the per-source pages do
+    const QString iconUrl = hit->iconUrl.isEmpty() ? pack.iconUrl : hit->iconUrl;
+    if (iconUrl.isEmpty()) {
         start("default");
         return;
     }
-    const QString iconName = "modrinth_" + hit->id + ".png";
+    QString safeId = hit->id;
+    safeId.replace(QRegularExpression("[^A-Za-z0-9_-]"), "_");
+    const QString iconName = sourceName.toLower() + "_" + safeId + ".png";
     const QString iconPath = QDir(QStandardPaths::writableLocation(QStandardPaths::TempLocation)).filePath("wraith_" + iconName);
     m_iconJob = makeShared<NetJob>("Wraith::PackIcon", APPLICATION->network());
-    m_iconJob->addNetAction(Net::ApiRequest::makeFile(QUrl(pack.iconUrl), iconPath));
+    m_iconJob->addNetAction(Net::ApiRequest::makeFile(QUrl(iconUrl), iconPath));
     connect(m_iconJob.get(), &Task::finished, this, [iconPath, iconName, start] {
         QString key = "default";
         if (QFile::exists(iconPath)) {

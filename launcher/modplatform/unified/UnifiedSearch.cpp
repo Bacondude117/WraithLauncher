@@ -50,6 +50,11 @@ QJsonObject parseObject(const QByteArray& data)
 
 UnifiedSearch::UnifiedSearch(QObject* parent) : QObject(parent) {}
 
+const QList<ATLauncher::IndexedPack>& UnifiedSearch::atlauncherPacks()
+{
+    return atlCache();
+}
+
 UnifiedSearch::~UnifiedSearch()
 {
     abort();
@@ -74,8 +79,16 @@ void UnifiedSearch::search(const QString& query)
     m_hits.clear();
     m_packs.clear();
     m_errors.clear();
-    m_pending = enabledSources();
+    m_pending.clear();
+    for (auto source : enabledSources()) {
+        if (!m_skipped.contains(source))
+            m_pending.append(source);
+    }
     emit resultsChanged();
+    if (m_pending.isEmpty()) {
+        emit finished();
+        return;
+    }
 
     for (auto source : QList<Source>(m_pending)) {
         switch (source) {

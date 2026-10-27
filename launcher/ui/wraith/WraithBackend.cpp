@@ -25,8 +25,11 @@
 #include <QImageReader>
 #include <QInputDialog>
 #include <QMenu>
+#include <QPainter>
+#include <QPainterPath>
 #include <QTimer>
 #include <QUrl>
+#include <QUrlQuery>
 
 #include <QDir>
 
@@ -44,16 +47,95 @@
 
 #include "WraithInstanceModel.h"
 #include "WraithShell.h"
+#include "WraithStyle.h"
 
 namespace Wraith {
 
 ImageProvider::ImageProvider() : QQuickImageProvider(QQuickImageProvider::Image) {}
 
+namespace {
+// Same as Theme.hashColor in QML: a stable hue per name.
+QColor hashColor(const QString& name)
+{
+    int h = 0;
+    for (const QChar c : name)
+        h = (h * 31 + c.unicode()) % 360;
+    return QColor::fromHslF(h / 360.0f, 0.45f, 0.32f);
+}
+
+/**
+ * Cover art for cards and headers, drawn once on the CPU: a colour wash, the icon blurred (downscale/upscale) and
+ * mostly desaturated, a dark veil and a fade into the card colour, clipped to rounded corners. Doing this here
+ * instead of with shader effects lets the interface run on Qt Quick's light software renderer (see PERFORMANCE.md).
+ * id: cover/<icon key>?seed=<name>&dim=<0..1>&radius=<px>&bottom=<0|1>
+ */
+QImage renderCover(const QString& id, QSize target)
+{
+    const QString key = QUrl::fromPercentEncoding(id.mid(6).section('?', 0, 0).toUtf8());
+    const QUrlQuery query(id.section('?', 1));
+    const QString seed = query.queryItemValue("seed", QUrl::FullyDecoded);
+    const double dim = query.queryItemValue("dim").toDouble();
+    const double radius = query.queryItemValue("radius").toDouble();
+    const bool roundBottom = query.queryItemValue("bottom") != "0";
+
+    QImage cover(target, QImage::Format_ARGB32_Premultiplied);
+    cover.fill(Qt::transparent);
+    QPainter painter(&cover);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform);
+
+    QPainterPath shape;
+    const QRectF rect(QPointF(0, 0), QSizeF(target));
+    shape.addRoundedRect(roundBottom ? rect : rect.adjusted(0, 0, 0, radius), radius, radius);
+    painter.setClipPath(shape.intersected([&] {
+        QPainterPath r;
+        r.addRect(rect);
+        return r;
+    }()));
+
+    QLinearGradient wash(rect.topLeft(), rect.topRight());
+    wash.setColorAt(0, hashColor(seed));
+    wash.setColorAt(1, hashColor(seed + "x").darker(160));
+    painter.fillRect(rect, wash);
+
+    QImage icon = APPLICATION->icons()->getIcon(key).pixmap(QSize(32, 32)).toImage().convertToFormat(QImage::Format_ARGB32);
+    icon.setDevicePixelRatio(1);  // high-DPI pixmaps carry a ratio that would shrink everything drawn from them
+    if (!icon.isNull()) {
+        // keep 15% of the colour, like the shader version did
+        for (int y = 0; y < icon.height(); y++) {
+            auto* line = reinterpret_cast<QRgb*>(icon.scanLine(y));
+            for (int x = 0; x < icon.width(); x++) {
+                const QRgb p = line[x];
+                const int gray = qGray(p);
+                line[x] = qRgba(gray + (qRed(p) - gray) * 15 / 100, gray + (qGreen(p) - gray) * 15 / 100, gray + (qBlue(p) - gray) * 15 / 100,
+                                qAlpha(p));
+            }
+        }
+        // a cheap, smooth blur: shrink to a few pixels, then enlarge in two smooth steps
+        QImage tiny = icon.scaled(6, 6, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        const QSize big = (QSizeF(target) * 1.3).toSize();
+        QImage blurred = tiny.scaled(big / 6 + QSize(1, 1), Qt::IgnoreAspectRatio, Qt::SmoothTransformation)
+                             .scaled(big, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+        painter.drawImage(QPointF((target.width() - blurred.width()) / 2.0, (target.height() - blurred.height()) / 2.0), blurred);
+    }
+    painter.fillRect(rect, QColor::fromRgbF(0.04f, 0.05f, 0.07f, static_cast<float>(dim)));
+    QLinearGradient fade(rect.topLeft(), rect.bottomLeft());
+    QColor surface(Color::surface);
+    fade.setColorAt(0.45, Qt::transparent);
+    surface.setAlphaF(0.85f);
+    fade.setColorAt(1.0, surface);
+    painter.fillRect(rect, fade);
+    return cover;
+}
+}  // namespace
+
 QImage ImageProvider::requestImage(const QString& id, QSize* size, const QSize& requestedSize)
 {
     const QSize target = requestedSize.isValid() && !requestedSize.isEmpty() ? requestedSize : QSize(64, 64);
     QImage image;
-    if (id.startsWith("icon/")) {
+    if (id.startsWith("cover/")) {
+        image = renderCover(id, target);
+    } else if (id.startsWith("icon/")) {
         QString key = QUrl::fromPercentEncoding(id.mid(5).section('?', 0, 0).toUtf8());
         image = APPLICATION->icons()->getIcon(key).pixmap(target).toImage();
     } else if (id.startsWith("glyph/")) {

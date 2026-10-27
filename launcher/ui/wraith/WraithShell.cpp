@@ -17,8 +17,13 @@
  */
 #include "WraithShell.h"
 
+#include <QAbstractButton>
 #include <QAction>
+#include <QApplication>
+#include <QDialog>
 #include <QDir>
+#include <QLineEdit>
+#include <QMessageBox>
 #include <QFile>
 #include <QFileInfo>
 #include <QGraphicsOpacityEffect>
@@ -32,6 +37,8 @@
 #include <QQuickItem>
 #include <QQuickStyle>
 #include <QQuickWidget>
+#include <QQuickWindow>
+#include <QSGRendererInterface>
 #include <QScreen>
 #include <QStackedWidget>
 #include <QTextStream>
@@ -66,6 +73,11 @@ Shell::Shell(MainWindow* window, QWidget* parent) : QWidget(parent), m_window(wi
     static bool s_styleSet = false;
     if (!s_styleSet) {
         QQuickStyle::setStyle("Basic");
+        // Lightweight by default: Qt Quick's software renderer draws the shell with the CPU and needs no GPU
+        // context, which saves roughly 150 MB per process (PERFORMANCE.md). The GPU renderer is a setting
+        // (Settings → Appearance, applied on restart). QT_QUICK_BACKEND still overrides both.
+        if (!APPLICATION->settings()->get("WraithGpuInterface").toBool() && qEnvironmentVariableIsEmpty("QT_QUICK_BACKEND"))
+            QQuickWindow::setGraphicsApi(QSGRendererInterface::Software);
         s_styleSet = true;
     }
     m_engine = new QQmlEngine(this);
@@ -334,6 +346,9 @@ static QImage captureWindow(QWidget* window)
 //   nav <page> | instance <name>[|tab] | settings <category> | call <page> <function> [argument] | size <w> <h>
 //   newinstance [group] | newinstance-loader <loader> <mc> | newinstance-create <name>|<mc>|<loader>|<group>
 //   select <instance name> | action <MainWindow QAction name> | wait <ms> | shot <file.png> | toast <text> | dump | quit
+//   backend <method> <instance name> (e.g. rename, duplicate, remove) | toast-action (click the newest toast's button)
+//   modal-shot <file.png> | modal-type <text> | modal-accept | modal-reject | modal-dump: act on the open modal dialog
+// "action" and "backend" run asynchronously, so a dialog they open can be handled by the following lines.
 void Shell::runUiScript(const QString& path)
 {
     QFile file(path);
@@ -370,8 +385,58 @@ void Shell::runUiScript(const QString& path)
                         m_backend->select(APPLICATION->instances()->at(i)->id());
                 }
             } else if (command == "action") {
+                // asynchronous, so a modal dialog it opens doesn't stall the script (modal-* commands handle it)
                 if (auto* action = m_window->findChild<QAction*>(rest))
-                    action->trigger();
+                    QTimer::singleShot(0, action, &QAction::trigger);
+            } else if (command == "backend") {
+                // backend <method> <instance name>: an instance action as the UI calls it (asynchronous, see above)
+                const QString method = rest.section(' ', 0, 0);
+                const QString name = rest.section(' ', 1);
+                for (int i = 0; i < APPLICATION->instances()->count(); i++) {
+                    auto instance = APPLICATION->instances()->at(i);
+                    if (instance->name() == name || instance->id() == name) {
+                        QTimer::singleShot(0, m_backend, [this, method, id = instance->id()] {
+                            QMetaObject::invokeMethod(m_backend, method.toUtf8().constData(), Q_ARG(QString, id));
+                        });
+                        break;
+                    }
+                }
+            } else if (command.startsWith("modal-")) {
+                auto* modal = QApplication::activeModalWidget();
+                if (!modal) {
+                    qWarning() << "Wraith UI script: no modal dialog for" << command;
+                } else if (command == "modal-shot") {
+                    const QString target = QDir::isAbsolutePath(rest) ? rest : QDir(baseDir).filePath(rest);
+                    modal->grab().save(target);
+                } else if (command == "modal-type") {
+                    for (auto* edit : modal->findChildren<QLineEdit*>()) {
+                        if (edit->isVisible()) {
+                            edit->setText(rest);
+                            break;
+                        }
+                    }
+                } else if (command == "modal-dump") {
+                    qDebug() << "Wraith UI script: modal" << modal->metaObject()->className() << modal->windowTitle();
+                } else if (auto* box = qobject_cast<QMessageBox*>(modal)) {
+                    QAbstractButton* chosen = nullptr;
+                    for (auto* button : box->buttons()) {
+                        const auto role = box->buttonRole(button);
+                        const bool yes = role == QMessageBox::YesRole || role == QMessageBox::AcceptRole;
+                        if (command == "modal-accept" ? yes : (role == QMessageBox::NoRole || role == QMessageBox::RejectRole))
+                            chosen = button;
+                    }
+                    if (chosen)
+                        QTimer::singleShot(0, chosen, &QAbstractButton::click);
+                } else if (auto* dialog = qobject_cast<QDialog*>(modal)) {
+                    QTimer::singleShot(0, dialog, command == "modal-accept" ? &QDialog::accept : &QDialog::reject);
+                }
+            } else if (command == "toast-action") {
+                for (auto* toastFrame : findChildren<QFrame*>("wraithToast")) {
+                    if (auto* button = toastFrame->findChild<QPushButton*>(); button && toastFrame->isVisible()) {
+                        QTimer::singleShot(0, button, &QPushButton::click);
+                        break;
+                    }
+                }
             } else if (command == "newinstance") {
                 showNewInstance(rest);
             } else if (command == "newinstance-loader") {

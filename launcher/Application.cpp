@@ -659,6 +659,12 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
 
         m_settings->registerSetting("MenuBarInsteadOfToolBar", false);
         m_settings->registerSetting("WraithClassicLayout", false);  // Wraith: use Prism's layout instead of the Wraith shell
+        // Wraith: see VALUES_AUDIT.md. Every automatic behaviour has a switch.
+        m_settings->registerSetting("WraithAllowInsecureHttp", false);  // true allows plain http; by default it is upgraded to https
+        m_settings->registerSetting("WraithBrowseLoadPopular", true);   // Browse lists popular packs when opened
+        m_settings->registerSetting("WraithBrowseSources", QString());  // comma-separated sources the user switched off
+        m_settings->registerSetting("WraithRefreshTranslationsOnStart", true);
+        m_settings->registerSetting("WraithGpuInterface", false);  // Qt Quick GPU renderer (smoother, ~150 MB more)
 
         m_settings->registerSetting("NumberOfConcurrentTasks", 10);
         m_settings->registerSetting("NumberOfConcurrentDownloads", 6);
@@ -1051,7 +1057,10 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
     // load translations
     {
         m_translations.reset(new TranslationsModel("translations"));
-        m_translations->downloadIndex();
+        // Wraith: refreshing the translation list on every start is a network request; it can be turned off
+        // (the list is still fetched when it is missing or when the language page opens)
+        if (m_settings->get("WraithRefreshTranslationsOnStart").toBool())
+            m_translations->downloadIndex();
         qInfo() << "Your language is" << m_translations->selectedLanguage();
         qInfo() << "<> Translations loaded.";
     }

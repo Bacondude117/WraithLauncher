@@ -4,6 +4,24 @@ Wraith Launcher is a ghost-themed fork of [Prism Launcher](https://github.com/Pr
 (C++20 / Qt 6, CMake). Work happens on the `wraith-dev` branch. Keep changes small and upstream-friendly
 so the fork can keep rebasing on Prism's `develop`.
 
+## Core values (override everything)
+
+If a feature conflicts with these, redesign or drop it and record why in DECISIONS.md.
+Audit results live in VALUES_AUDIT.md.
+
+- **Lightweight:** no embedded browsers or web runtimes (no QtWebEngine/WebView/Electron), lazy-load heavy
+  features, and track startup time and RAM against upstream Prism in PERFORMANCE.md.
+- **Completely free:** no ads, paywalls or locked features. Keep GPL-3.0 and credit Prism's authors.
+- **Secure:** verify every download's hash, HTTPS only, never store tokens in plain text, server dashboard
+  LAN-only by default.
+- **Private:** no telemetry or tracking, no Wraith accounts or servers, everything analytical runs locally.
+  List every network endpoint in PRIVACY.md (update it whenever a new endpoint is added).
+- **Equal treatment:** no preferred mod source or loader. Search ranking is source-neutral, duplicate packs
+  show all sources, and every loader gets equal feature support where metadata allows.
+- **Complete user control:** isolated instance folders compatible with Prism's format; no forced updates; every
+  automatic behaviour can be turned off; no locked or proprietary storage; never overwrite manual edits;
+  analyzers suggest but never auto-apply fixes; nothing deleted without confirmation.
+
 ## Build (Windows)
 
 Prerequisites (installed on the dev machine): VS 2022 Build Tools (C++ workload), CMake ≥ 3.28, Ninja,

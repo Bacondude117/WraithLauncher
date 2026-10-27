@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls.Basic
 import "style"
 
-// Browse: one search across Modrinth, CurseForge, FTB, ATLauncher and Technic, filters on the left,
+// Browse: one search across ATLauncher, CurseForge, FTB, Modrinth and Technic, filters on the left,
 // results as cards, details and install on the right.
 Rectangle {
     id: root
@@ -14,9 +14,11 @@ Rectangle {
     property var detail: ({})
     property var versions: []
     property string versionsState: ""  // "", "loading", "ready", "failed"
+    property string installSource: ""
 
     function pageShown() {
-        if (!searched)
+        // Listing popular packs on open is a network request; it can be switched off in Settings.
+        if (!searched && model.loadPopularOnOpen())
             search(searchField.text)
         searchField.forceActiveFocus()
         enterAnim.restart()
@@ -28,33 +30,39 @@ Rectangle {
         selected = -1
         model.search(query)
     }
-    // used by the UI test script
-    function installSelected(unused) {
+    // used by the UI test script: installs the selected pack from the chosen source (or its default)
+    function installSelected(source) {
+        if (source && source.length > 0 && source !== installSource && (detail.hits || []).some(h => h.source === source)) {
+            chooseSource(source)
+            return
+        }
         if (versionsState === "ready" && versions.length > 0)
-            model.installModrinth(selected, versions[versionBox.currentIndex].id)
+            model.install(selected, installSource, versions[versionBox.currentIndex].id)
     }
     function select(row) {
         row = Number(row)
         selected = row
         detail = model.details(row)
+        chooseSource(detail.defaultSource || "")
+    }
+    function chooseSource(source) {
+        installSource = source
         versions = []
-        versionsState = ""
-        if (detail.hits && detail.hits.some(h => h.source === "Modrinth")) {
-            versionsState = "loading"
-            model.loadVersions(row)
-        }
+        versionsState = source.length > 0 ? "loading" : ""
+        if (source.length > 0)
+            model.loadVersions(selected, source)
     }
 
     Connections {
         target: root.model
-        function onVersionsLoaded(row, list) {
-            if (row !== root.selected) return
+        function onVersionsLoaded(row, source, list) {
+            if (row !== root.selected || source !== root.installSource) return
             root.versions = list
             root.versionsState = "ready"
             versionBox.currentIndex = 0
         }
-        function onVersionsFailed(row, error) {
-            if (row === root.selected) root.versionsState = "failed"
+        function onVersionsFailed(row, source, error) {
+            if (row === root.selected && source === root.installSource) root.versionsState = "failed"
         }
         function onFiltersChanged() { root.selected = -1 }
     }
@@ -284,6 +292,13 @@ Rectangle {
 
         EmptyState {
             anchors.centerIn: list
+            visible: !root.searched
+            icon: "search"
+            title: qsTr("Search for a modpack")
+            text: qsTr("Wraith searches every source you have switched on.")
+        }
+        EmptyState {
+            anchors.centerIn: list
             visible: root.searched && !root.model.running && root.model.count === 0
             icon: "search"
             title: qsTr("No modpacks found")
@@ -341,20 +356,45 @@ Rectangle {
                 Item { width: 1; height: 6 }
                 T { text: qsTr("Install"); font.pixelSize: Theme.fontSection; font.weight: Font.DemiBold }
 
-                // Modrinth: pick a version and install directly
+                // Every source installs the same way: pick the source (when the pack is on several), a version, Install.
+                T {
+                    visible: (root.detail.hits || []).length > 1
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    elide: Text.ElideNone
+                    color: Theme.textMuted
+                    font.pixelSize: Theme.fontCaption
+                    text: qsTr("This pack is on %1 sources. Choose where to install it from:").arg((root.detail.hits || []).length)
+                }
+                Flow {
+                    width: parent.width
+                    spacing: 8
+                    visible: (root.detail.hits || []).length > 1
+                    Repeater {
+                        model: root.detail.hits || []
+                        delegate: Chip {
+                            required property var modelData
+                            text: modelData.source
+                            dot: Theme.sourceColor(modelData.source)
+                            checked: root.installSource === modelData.source
+                            onClicked: root.chooseSource(modelData.source)
+                        }
+                    }
+                }
                 Column {
                     width: parent.width
                     spacing: 10
                     visible: root.versionsState.length > 0
-                    T { text: qsTr("From Modrinth"); color: Theme.textMuted; font.pixelSize: Theme.fontCaption }
+                    T { text: qsTr("Version from %1").arg(root.installSource); color: Theme.textMuted; font.pixelSize: Theme.fontCaption }
                     BusyIndicator { visible: root.versionsState === "loading"; running: visible; width: 28; height: 28 }
                     T { visible: root.versionsState === "failed"; text: qsTr("Couldn't load versions."); color: Theme.danger }
+                    T { visible: root.versionsState === "ready" && root.versions.length === 0; text: qsTr("No installable versions."); color: Theme.textMuted }
                     WComboBox {
                         id: versionBox
-                        visible: root.versionsState === "ready"
+                        visible: root.versionsState === "ready" && root.versions.length > 0
                         width: parent.width
                         textRole: "label"
-                        model: root.versions.map(v => ({ label: v.number + "  ·  " + v.loaders + " " + v.minecraft }))
+                        model: root.versions.map(v => ({ label: [v.number, v.loaders, v.minecraft].filter(s => s && s.length > 0).join("  ·  ") }))
                     }
                     WButton {
                         visible: root.versionsState === "ready" && root.versions.length > 0
@@ -362,19 +402,16 @@ Rectangle {
                         kind: "primary"
                         icon: "download"
                         text: qsTr("Install")
-                        onClicked: root.model.installModrinth(root.selected, root.versions[versionBox.currentIndex].id)
+                        onClicked: root.model.install(root.selected, root.installSource, root.versions[versionBox.currentIndex].id)
                     }
-                }
-
-                // other sources: their own page, with the search filled in
-                Repeater {
-                    model: (root.detail.hits || []).filter(h => h.source !== "Modrinth")
-                    delegate: WButton {
-                        required property var modelData
-                        width: detailColumn.width
+                    WButton {
+                        visible: root.installSource.length > 0
+                        width: parent.width
+                        kind: "ghost"
+                        compact: true
                         icon: "external"
-                        text: qsTr("Install with %1...").arg(modelData.source)
-                        onClicked: root.model.installWith(root.selected, modelData.source)
+                        text: qsTr("Open in the %1 page...").arg(root.installSource)
+                        onClicked: root.model.installWith(root.selected, root.installSource)
                     }
                 }
 

@@ -48,6 +48,19 @@ Resume from the first unchecked step in PLAN.md.
   - Verified: Edit Instance / Settings / Manage Accounts requests from Prism code land in the shell; 24/24 tests;
     `install\wraithlauncher.exe` runs the new UI with Qt off PATH.
 
+- Round 4 (user request: core values, parity, new features):
+  - Core values added to CLAUDE.md.
+  - Step 1, values audit (VALUES_AUDIT.md, PRIVACY.md, PERFORMANCE.md):
+    - Download hashes verified for CurseForge pack files, modpack archives and friend-server software.
+    - HTTPS enforced, and accounts.json encrypted with DPAPI.
+    - Source-neutral ranking, every Browse source installs directly, and switched-off sources are never contacted.
+    - Friend server never overwrites manual edits, and has no open ports.
+    - Off switches for automatic requests, and the software renderer by default (-46 MB working set, -157 MB private).
+    - `Wraith Launcher.cmd` (and a local `.lnk`) at the repo root starts `install\wraithlauncher.exe`, now a
+      Release build.
+    - Verified: 25/25 tests; a Technic Solder install from Browse; FTB and ATLauncher version lists; screenshots
+      22–24.
+
 ## Next
 - Follow-ups are in SUMMARY.md under "Unfinished and risky": a real game launch and server start (both need an
   account or the user's EULA consent), Fabric/Forge/NeoForge server setup tests, a CurseForge test with a key,

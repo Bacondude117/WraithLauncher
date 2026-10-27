@@ -177,7 +177,7 @@ Rectangle {
                 icon: "puzzle"
                 title: root.model && root.model.filterText.length > 0 ? qsTr("Nothing matches") : qsTr("Nothing installed yet")
                 text: root.model && root.model.filterText.length > 0 ? qsTr("Try a different search.")
-                      : qsTr("Find mods, resource packs and shaders on Modrinth and CurseForge, or add files you already have.")
+                      : qsTr("Find mods, resource packs and shaders on CurseForge and Modrinth, or add files you already have.")
                 WButton {
                     visible: !(root.model && root.model.filterText.length > 0)
                     kind: "primary"

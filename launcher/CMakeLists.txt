@@ -476,6 +476,13 @@ set(API_SOURCES
     server/ServerModFilter.cpp
     server/FriendServer.h
     server/FriendServer.cpp
+    server/ServerFileSync.h
+    server/ServerFileSync.cpp
+
+    # Wraith: security helpers (encrypted token storage, download checksums)
+    security/SecretStore.h
+    security/SecretStore.cpp
+    net/WraithChecksum.h
 
     # Wraith: unified modpack search
     modplatform/unified/UnifiedPack.h
@@ -1358,6 +1365,9 @@ target_link_libraries(Launcher_logic
 )
 if (TARGET ${Launcher_QT_DBUS})
     target_compile_definitions(Launcher_logic PUBLIC WITH_QTDBUS)
+endif()
+if(WIN32)
+    target_link_libraries(Launcher_logic Crypt32)  # Wraith: DPAPI for security/SecretStore
 endif()
 
 if(APPLE)

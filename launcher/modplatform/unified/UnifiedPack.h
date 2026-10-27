@@ -29,7 +29,7 @@ namespace Unified {
 
 enum class Source { Modrinth, CurseForge, FTB, ATLauncher, Technic };
 
-/** All sources, in the order their tags are shown and their data is preferred when merging. */
+/** All sources, alphabetically: the order their tags are shown. No source is preferred. */
 QList<Source> allSources();
 QString sourceName(Source source);
 
@@ -78,8 +78,9 @@ QList<Pack> mergeHits(const QList<SourceHit>& hits);
 
 /**
  * Score and sort packs: relevance first (text match, each source's own ranking, multi-source bonus),
- * bucketed so that packs of similar relevance are then ordered by popularity.
- * With an empty query, packs are ordered by popularity.
+ * bucketed so that packs of similar relevance are then ordered by each source's own ranking, interleaving sources.
+ * With an empty query (each source returns its popular packs), packs are interleaved by that popularity order.
+ * Download counts are never compared across sources.
  */
 void rankPacks(QList<Pack>& packs, const QString& query);
 

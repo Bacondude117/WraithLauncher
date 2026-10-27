@@ -31,6 +31,7 @@
 
 #include "Application.h"
 #include "BuildConfig.h"
+#include "security/SecretStore.h"
 #include "settings/SettingsObject.h"
 #include "ui/MainWindow.h"
 #include "ui/pages/BasePageProvider.h"
@@ -99,6 +100,7 @@ SettingsPage::SettingsPage(Shell* shell, QWidget* parent) : QWidget(parent), m_s
         { "java", tr("Java & memory"), "cpu", { "java-settings" } },
         { "accounts", tr("Accounts"), "users", { "accounts" }, true },
         { "network", tr("Network"), "network", { "proxy-settings", "apis" }, true },
+        { "privacy", tr("Privacy & security"), "shield", {} },
         { "advanced", tr("Advanced"), "sliders", { "external-tools" } },
         { "about", tr("About"), "info", {} },
     };
@@ -250,6 +252,12 @@ QWidget* SettingsPage::buildSimple(const Category& category, PageHost* host, QSt
         card->addRow(tr("Dialog theme"), tr("Colours of dialogs and the classic layout. Wraith's own pages always use the Wraith look."), theme);
         card->addRow(tr("Background cat"), tr("A cat behind your library. Packs and opacity are under Advanced."),
                      switchFor("TheCat", [this](bool on) { write("appearance", [on] { APPLICATION->settings()->set("TheCat", on); }); }, card));
+        card->addRow(tr("Use the graphics card for the interface"),
+                     tr("Smoother animations, but about 150 MB more memory. Takes effect after a restart."),
+                     switchFor("WraithGpuInterface", [this](bool on) {
+                         APPLICATION->settings()->set("WraithGpuInterface", on);
+                         m_shell->toast(tr("Restart Wraith Launcher to apply."), "info");
+                     }, card));
     } else if (key == "game") {
         auto setter = [this](const char* name) {
             return [this, name](bool on) { write("game", [name, on] { APPLICATION->settings()->set(name, on); }); };
@@ -274,6 +282,29 @@ QWidget* SettingsPage::buildSimple(const Category& category, PageHost* host, QSt
                              APPLICATION->settings()->set("AutomaticJavaSwitch", on);
                          });
                      }, card));
+    } else if (key == "privacy") {
+        auto setter = [](const char* name) { return [name](bool on) { APPLICATION->settings()->set(name, on); }; };
+        auto* notice = Widgets::muted(tr("Wraith has no telemetry, no tracking, no ads and no Wraith accounts or servers. It only "
+                                         "contacts the services you use: Mojang and Microsoft for the game and sign-in, the mod "
+                                         "and modpack sites you search, and the metadata and Java servers Prism Launcher uses. "
+                                         "PRIVACY.md lists every address."),
+                                      card);
+        notice->setWordWrap(true);
+        card->addWidget(notice);
+        card->addRow(tr("List popular modpacks when Browse opens"), tr("Off: Browse waits until you search."),
+                     switchFor("WraithBrowseLoadPopular", setter("WraithBrowseLoadPopular"), card));
+        card->addRow(tr("Refresh the translation list on start"), tr("Off: it is only fetched when the language page opens."),
+                     switchFor("WraithRefreshTranslationsOnStart", setter("WraithRefreshTranslationsOnStart"), card));
+        card->addRow(tr("Refresh version metadata when launching"), tr("Checks for new Minecraft and loader versions before a game starts."),
+                     switchFor("MetaRefreshOnLaunch", setter("MetaRefreshOnLaunch"), card));
+        card->addRow(tr("Allow unencrypted (http) downloads"),
+                     tr("Off: every download uses HTTPS, and a server without HTTPS fails instead of downloading in the clear."),
+                     switchFor("WraithAllowInsecureHttp", setter("WraithAllowInsecureHttp"), card));
+        card->addRow(tr("Account sign-in tokens"),
+                     Wraith::SecretStore::available() ? tr("Encrypted with your Windows login (DPAPI).")
+                                                      : tr("Stored in a file only your user can read. Encryption isn't available on this "
+                                                           "system yet."),
+                     new QWidget(card));
     } else if (key == "advanced") {
         card->addRow(tr("Classic layout"), tr("Use Prism Launcher's toolbar-and-grid layout instead of Wraith's. Takes effect after a restart."),
                      switchFor("WraithClassicLayout", [this](bool on) {
@@ -306,8 +337,9 @@ QWidget* SettingsPage::buildSimple(const Category& category, PageHost* host, QSt
         auto* name = Widgets::title(BuildConfig.LAUNCHER_DISPLAYNAME, about, 16);
         aboutLayout->addWidget(name);
         aboutLayout->addWidget(Widgets::muted(tr("Version %1").arg(BuildConfig.printableVersionString()), about));
-        auto* notice = new QLabel(tr("Wraith Launcher is a fork of Prism Launcher. It is not affiliated with or endorsed by the Prism Launcher "
-                                     "project. Licensed under the GNU GPL v3."),
+        auto* notice = new QLabel(tr("Wraith Launcher is a fork of Prism Launcher, made by the Prism Launcher contributors. It is not "
+                                     "affiliated with or endorsed by the Prism Launcher project. Licensed under the GNU GPL v3.\n\n"
+                                     "Free, with no ads, paywalls or locked features, and no telemetry."),
                                   about);
         notice->setWordWrap(true);
         aboutLayout->addSpacing(6);

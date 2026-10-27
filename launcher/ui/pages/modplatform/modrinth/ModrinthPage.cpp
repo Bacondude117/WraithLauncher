@@ -316,6 +316,8 @@ void ModrinthPage::suggestCurrent()
             QMap<QString, QString> extraInfo;
             extraInfo.insert("pack_id", m_current->addonId.toString());
             extraInfo.insert("pack_version_id", ver.fileId.toString());
+            extraInfo.insert("file_hash", ver.hash);  // Wraith: verified by InstanceImportTask
+            extraInfo.insert("file_hash_algo", ver.hashType);
 
             m_dialog->setSuggestedPack(m_current->name, ver.version,
                                        new InstanceImportTask(ver.downloadUrl, true, this, std::move(extraInfo)));

@@ -84,8 +84,20 @@ class UnifiedPackTest : public QObject {
         QVERIFY(fo->hasSource(Source::CurseForge));
         QCOMPARE(fo->downloads, qint64(12000));
         QCOMPARE(fo->bestRank(), 0);
-        // hits are ordered by source priority: Modrinth first
-        QCOMPARE(fo->hits.first().source, Source::Modrinth);
+        // tags are alphabetical: CurseForge before Modrinth
+        QCOMPARE(fo->hits.first().source, Source::CurseForge);
+    }
+
+    void mergeTakesDataFromBestRankedHit()
+    {
+        // No source is preferred: the summary comes from the hit its own source ranked highest.
+        auto a = hit(Source::Modrinth, "m", "Tekkit", "team", -1, 4);
+        a.summary = "from modrinth";
+        auto b = hit(Source::Technic, "t", "Tekkit", "team", -1, 0);
+        b.summary = "from technic";
+        auto packs = mergeHits({ a, b });
+        QCOMPARE(packs.size(), 1);
+        QCOMPARE(packs.first().summary, QString("from technic"));
     }
 
     void mergeNeverDuplicatesASource()
@@ -153,24 +165,37 @@ class UnifiedPackTest : public QObject {
         QCOMPARE(packs.first().name, QString("Tekkit"));
     }
 
-    void rankPopularityWithinSameRelevance()
+    void rankWithinTierIgnoresRawDownloads()
     {
+        // Same relevance tier: each source's own order decides, not the larger download number.
         auto packs = mergeHits({
             hit(Source::Modrinth, "a", "Tekkit Small", "x", 100, 0),
-            hit(Source::CurseForge, "b", "Tekkit Big", "y", 1'000'000, 0),
+            hit(Source::CurseForge, "b", "Tekkit Big", "y", 1'000'000, 1),
         });
         rankPacks(packs, "tekkit");
-        QCOMPARE(packs.first().name, QString("Tekkit Big"));
+        QCOMPARE(packs.first().name, QString("Tekkit Small"));
     }
 
-    void rankBrowsingByPopularity()
+    void rankBrowsingFollowsSourceOrder()
     {
         auto packs = mergeHits({
-            hit(Source::Modrinth, "a", "Small", "x", 10, 0),
-            hit(Source::Modrinth, "b", "Large", "y", 10'000, 1),
+            hit(Source::Modrinth, "a", "Small", "x", 10, 1),
+            hit(Source::Modrinth, "b", "Large", "y", 10'000, 0),
         });
         rankPacks(packs, "");
         QCOMPARE(packs.first().name, QString("Large"));
+    }
+
+    void rankBrowsingInterleavesSources()
+    {
+        // A source without download counts (Technic) is not pushed below the others.
+        auto packs = mergeHits({
+            hit(Source::Modrinth, "a", "Alpha", "x", 5'000'000, 0),
+            hit(Source::Modrinth, "b", "Beta", "y", 4'000'000, 1),
+            hit(Source::Technic, "c", "Gamma", "", -1, 0),
+        });
+        rankPacks(packs, "");
+        QCOMPARE(packs[2].name, QString("Beta"));
     }
 };
 

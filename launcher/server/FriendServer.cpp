@@ -24,6 +24,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QNetworkInterface>
 #include <QRegularExpression>
 
 #include "Application.h"
@@ -33,6 +34,8 @@
 #include "minecraft/MinecraftInstance.h"
 #include "minecraft/PackProfile.h"
 #include "net/ApiRequest.h"
+#include "net/WraithChecksum.h"
+#include "server/ServerFileSync.h"
 #include "settings/SettingsObject.h"
 
 namespace WraithServer {
@@ -179,6 +182,7 @@ void FriendServer::loadSettings()
     m_port = obj.value("port").toInt(m_port);
     m_memoryMb = obj.value("memoryMb").toInt(m_memoryMb);
     m_eulaAccepted = obj.value("eulaAccepted").toBool(false);
+    m_writtenPort = obj.value("writtenPort").toInt(-1);
     for (const auto& v : obj.value("includedMods").toArray())
         m_included.insert(v.toString());
     for (const auto& v : obj.value("excludedMods").toArray())
@@ -191,6 +195,7 @@ void FriendServer::saveSettings() const
     obj.insert("port", m_port);
     obj.insert("memoryMb", m_memoryMb);
     obj.insert("eulaAccepted", m_eulaAccepted);
+    obj.insert("writtenPort", m_writtenPort);
     obj.insert("includedMods", QJsonArray::fromStringList(QStringList(m_included.begin(), m_included.end())));
     obj.insert("excludedMods", QJsonArray::fromStringList(QStringList(m_excluded.begin(), m_excluded.end())));
     FS::ensureFolderPathExists(serverDir());
@@ -241,6 +246,18 @@ void FriendServer::log(const QString& line)
     if (m_console.size() > s_maxConsoleLines)
         m_console.remove(0, m_console.size() - s_maxConsoleLines);
     emit consoleLine(line);
+}
+
+QString FriendServer::lanAddress()
+{
+    for (const auto& address : QNetworkInterface::allAddresses()) {
+        if (address.protocol() != QAbstractSocket::IPv4Protocol || address.isLoopback())
+            continue;
+        if (address.isInSubnet(QHostAddress("10.0.0.0"), 8) || address.isInSubnet(QHostAddress("172.16.0.0"), 12) ||
+            address.isInSubnet(QHostAddress("192.168.0.0"), 16))
+            return address.toString();
+    }
+    return "localhost";
 }
 
 void FriendServer::setState(State state)
@@ -327,6 +344,8 @@ QStringList FriendServer::launchArguments() const
     // Quilt installs its launcher next to the vanilla server.jar; the launcher must win.
     if (dir.exists("quilt-server-launch.jar"))
         return { "-jar", "quilt-server-launch.jar" };
+    if (dir.exists("fabric-server-launch.jar"))
+        return { "-jar", "fabric-server-launch.jar" };
     if (dir.exists("server.jar"))
         return { "-jar", "server.jar" };
     // Older Forge: a forge-<version>.jar (not the installer) next to the libraries
@@ -356,11 +375,32 @@ void FriendServer::fetchJson(const QString& url, std::function<void(const QByteA
     m_job->start();
 }
 
-void FriendServer::downloadFile(const QString& url, const QString& path, std::function<void()> onSuccess)
+void FriendServer::downloadMavenFile(const QString& url, const QString& path, std::function<void()> onSuccess)
 {
-    log(tr("[Wraith] Downloading %1").arg(url));
+    // Maven repositories publish a .sha1 next to every artifact; fetch it first so the jar can be verified.
+    fetchJson(url + ".sha1", [this, url, path, onSuccess](const QByteArray& data) {
+        const QString sha1 = QString::fromLatin1(data).trimmed().section(' ', 0, 0);
+        if (sha1.size() != 40)
+            return fail(tr("couldn't verify %1: the repository published no SHA-1").arg(url));
+        downloadFile(url, path, "sha1", sha1, onSuccess);
+    });
+}
+
+void FriendServer::downloadFile(const QString& url,
+                                const QString& path,
+                                const QString& hashAlgo,
+                                const QString& hash,
+                                std::function<void()> onSuccess)
+{
+    // Every file the server runs is checked against a published hash (see VALUES_AUDIT.md).
+    auto* validator = Net::makeChecksumValidator(hashAlgo, hash);
+    if (!validator)
+        return fail(tr("couldn't verify %1: no checksum published").arg(url));
+    log(tr("[Wraith] Downloading %1 (%2 %3)").arg(url, hashAlgo, hash.left(12)));
     m_job = makeShared<NetJob>("WraithServer::download", APPLICATION->network());
-    m_job->addNetAction(Net::ApiRequest::makeFile(QUrl(url), path));
+    auto download = Net::ApiRequest::makeFile(QUrl(url), path);
+    download->addValidator(validator);
+    m_job->addNetAction(download);
     connect(m_job.get(), &Task::succeeded, this, [onSuccess] { onSuccess(); });
     connect(m_job.get(), &Task::failed, this, [this, url](const QString& reason) { fail(tr("couldn't download %1 (%2)").arg(url, reason)); });
     m_job->start();
@@ -413,27 +453,26 @@ void FriendServer::downloadVanilla()
             const QString url = server.value("url").toString();
             if (url.isEmpty())
                 return fail(tr("Mojang doesn't provide a server for Minecraft %1").arg(version));
-            downloadFile(url, FS::PathCombine(serverDir(), "server.jar"), [this] { copyFiles(); });
+            downloadFile(url, FS::PathCombine(serverDir(), "server.jar"), "sha1", server.value("sha1").toString(), [this] { copyFiles(); });
         });
     });
 }
 
 void FriendServer::downloadFabric()
 {
-    // The Fabric server launcher downloads the matching vanilla server itself on first start.
+    // The official Fabric installer from Fabric's Maven (verifiable, unlike the generated server-launcher jar)
+    // writes fabric-server-launch.jar and downloads the vanilla server.
     fetchJson("https://meta.fabricmc.net/v2/versions/installer", [this](const QByteArray& data) {
-        QString installer;
+        QString url;
         for (const auto& v : QJsonDocument::fromJson(data).array()) {
             if (v.toObject().value("stable").toBool()) {
-                installer = v.toObject().value("version").toString();
+                url = v.toObject().value("url").toString();
                 break;
             }
         }
-        if (installer.isEmpty())
+        if (url.isEmpty())
             return fail(tr("couldn't find a Fabric installer version"));
-        const QString url =
-            QString("https://meta.fabricmc.net/v2/versions/loader/%1/%2/%3/server/jar").arg(minecraftVersion(), loaderVersion(), installer);
-        downloadFile(url, FS::PathCombine(serverDir(), "server.jar"), [this] { copyFiles(); });
+        runInstaller(url, { "server", "-mcversion", minecraftVersion(), "-loader", loaderVersion(), "-downloadMinecraft", "-dir", "." });
     });
 }
 
@@ -468,7 +507,7 @@ void FriendServer::runQuiltInstaller()
 void FriendServer::runInstaller(const QString& url, const QStringList& installerArgs)
 {
     const QString installerPath = FS::PathCombine(serverDir(), "installer.jar");
-    downloadFile(url, installerPath, [this, installerPath, installerArgs] {
+    downloadMavenFile(url, installerPath, [this, installerPath, installerArgs] {
         log(tr("[Wraith] Running the %1 installer with %2 (this can take a few minutes)...").arg(loaderName(loader()), javaPath()));
         auto* installer = new QProcess(this);
         installer->setWorkingDirectory(serverDir());
@@ -496,11 +535,9 @@ void FriendServer::copyFiles()
     const QDir server(serverDir());
     const QDir game(m_instance->gameRoot());
 
-    // mods: rebuild from scratch so removed/excluded mods don't linger
-    const QString modsDir = server.filePath("mods");
-    FS::deletePath(modsDir);
-    FS::ensureFolderPathExists(modsDir);
-    int copied = 0;
+    // Mods and config folders are synced through a manifest so that files the user edited or added in the
+    // server folder are never overwritten or deleted (see ServerFileSync.h).
+    QList<FileSync::Item> items;
     int skipped = 0;
     for (const auto& mod : mods()) {
         if (!mod.include) {
@@ -508,21 +545,31 @@ void FriendServer::copyFiles()
             skipped++;
             continue;
         }
-        if (QFile::copy(QDir(m_instance->modsRoot()).filePath(mod.fileName), QDir(modsDir).filePath(mod.fileName)))
-            copied++;
-        else
-            log(tr("[Wraith] Couldn't copy %1").arg(mod.fileName));
+        items.append({ QDir(m_instance->modsRoot()).filePath(mod.fileName), "mods/" + mod.fileName });
     }
-    log(tr("[Wraith] Copied %1 mod(s), left out %2 client-only mod(s).").arg(copied).arg(skipped));
-
+    QStringList prefixes{ "mods/" };
     for (const auto& folder : s_copiedFolders) {
+        prefixes.append(folder + "/");
         if (!game.exists(folder))
             continue;
-        FS::copy copy(game.filePath(folder), server.filePath(folder));
-        copy.overwrite(true);
-        copy();
-        log(tr("[Wraith] Copied %1/").arg(folder));
+        QDirIterator it(game.filePath(folder), QDir::Files | QDir::Hidden, QDirIterator::Subdirectories);
+        while (it.hasNext()) {
+            const QString path = it.next();
+            items.append({ path, game.relativeFilePath(path) });
+        }
     }
+
+    FileSync sync(serverDir(), server.filePath("wraith-server-files.json"));
+    const auto result = sync.sync(items, prefixes);
+    log(tr("[Wraith] Server files: %1 copied, %2 already up to date, %3 removed, %4 client-only mod(s) left out.")
+            .arg(result.copied)
+            .arg(result.unchanged)
+            .arg(result.removed)
+            .arg(skipped));
+    for (const auto& kept : result.keptEdited)
+        log(tr("[Wraith] Kept %1: it was changed or added in the server folder, so Wraith leaves it alone.").arg(kept));
+    for (const auto& failed : result.failed)
+        log(tr("[Wraith] Couldn't copy %1").arg(failed));
     finishSetup();
 }
 
@@ -544,10 +591,13 @@ void FriendServer::finishSetup()
 
     QFile properties(server.filePath("server.properties"));
     if (!properties.exists() && properties.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        properties.write(QString("server-port=%1\nmotd=%2 (Wraith friend server)\nonline-mode=true\n")
+        // online-mode keeps Microsoft account checks on; query and RCON stay closed.
+        properties.write(QString("server-port=%1\nmotd=%2 (Wraith friend server)\nonline-mode=true\nenable-query=false\nenable-rcon=false\n")
                              .arg(m_port)
                              .arg(m_instance->name())
                              .toUtf8());
+        m_writtenPort = m_port;
+        saveSettings();
     }
 
     if (launchArguments().isEmpty())
@@ -572,23 +622,41 @@ void FriendServer::start()
         return;
     }
 
-    // keep server.properties' port in sync with the dashboard setting
+    // Keep server.properties' port in sync with the dashboard, but never overwrite a port the user typed into
+    // server.properties themselves: if the file no longer holds the port Wraith last wrote, the file wins.
     QFile properties(FS::PathCombine(serverDir(), "server.properties"));
     if (properties.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QStringList lines = QString::fromUtf8(properties.readAll()).split('\n');
         properties.close();
-        bool found = false;
-        for (auto& line : lines) {
-            if (line.startsWith("server-port=")) {
-                line = QString("server-port=%1").arg(m_port);
-                found = true;
-            }
+        int filePort = -1;
+        for (const auto& line : lines) {
+            if (line.startsWith("server-port="))
+                filePort = line.mid(12).trimmed().toInt();
         }
-        if (!found)
-            lines.prepend(QString("server-port=%1").arg(m_port));
-        if (properties.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
-            properties.write(lines.join('\n').toUtf8());
+        if (filePort > 0 && filePort != m_writtenPort) {
+            if (filePort != m_port)
+                log(tr("[Wraith] Using port %1 from server.properties (edited by hand).").arg(filePort));
+            m_port = filePort;
+        } else if (filePort != m_port) {
+            bool found = false;
+            for (auto& line : lines) {
+                if (line.startsWith("server-port=")) {
+                    line = QString("server-port=%1").arg(m_port);
+                    found = true;
+                }
+            }
+            if (!found)
+                lines.prepend(QString("server-port=%1").arg(m_port));
+            if (properties.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate))
+                properties.write(lines.join('\n').toUtf8());
+        }
+        m_writtenPort = m_port;
+        saveSettings();
     }
+    // Wraith never opens router ports (no UPnP, no relay): only people on this network can join by default.
+    log(tr("[Wraith] Players on your network can join at %1:%2. Wraith doesn't open ports on your router.")
+            .arg(lanAddress())
+            .arg(m_port));
 
     m_process = new QProcess(this);
     m_process->setWorkingDirectory(serverDir());

@@ -19,8 +19,10 @@
 
 #include <QHash>
 #include <QObject>
+#include <QSet>
 #include <functional>
 
+#include "modplatform/atlauncher/ATLPackIndex.h"
 #include "modplatform/unified/UnifiedPack.h"
 #include "net/NetJob.h"
 
@@ -48,8 +50,14 @@ class UnifiedSearch : public QObject {
     const QList<Source>& pendingSources() const { return m_pending; }
     const QHash<Source, QString>& errors() const { return m_errors; }
 
-    /** Sources that will be searched; CurseForge needs an API key. */
+    /** Sources that can be searched; CurseForge needs an API key. */
     static QList<Source> enabledSources();
+
+    /** Sources the user switched off: they are not contacted at all. */
+    void setSkippedSources(const QSet<Source>& skipped) { m_skipped = skipped; }
+
+    /** The ATLauncher pack index, once a search has downloaded it (it has every pack's versions). */
+    static const QList<ATLauncher::IndexedPack>& atlauncherPacks();
 
    signals:
     void resultsChanged();
@@ -78,6 +86,7 @@ class UnifiedSearch : public QObject {
     QList<Pack> m_packs;
     QHash<Source, QString> m_errors;
     QList<NetJob::Ptr> m_jobs;
+    QSet<Source> m_skipped;
 };
 
 }  // namespace Unified

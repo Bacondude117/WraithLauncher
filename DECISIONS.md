@@ -136,6 +136,33 @@ dialog with the search filled in, rather than duplicating those flows.
 then divided by zero. The shell keeps that view hidden at zero width, which surfaced it as a Qt debug assert. It is
 clamped to 1, a one-line fix suitable for upstream.
 
+## D21 — Core values audit (round 4)
+The user set core values (CLAUDE.md) that override everything. The audit and its fixes are in VALUES_AUDIT.md. The
+decisions that changed earlier work:
+- **D19 is superseded:** Browse installs every source directly, using each source's own Prism install task, because
+  installing only Modrinth natively treated sources unequally. "Open in the <source> page" stays for source-specific
+  extras.
+- **Ranking (D8b) no longer compares download counts across sources.** They aren't comparable, and ATLauncher and
+  Technic publish none, so those sources sank. Each source's own order is used inside a relevance tier.
+- **Fabric friend servers use the official Fabric installer** instead of meta.fabricmc.net's generated server jar,
+  because that jar has no published hash and the values require verified downloads (D11 updated).
+- **Tokens:** `accounts.json` is encrypted with DPAPI on Windows. A format with a text header was chosen, so Prism's
+  plain files still load and an unreadable file is renamed, never deleted. macOS/Linux are left as a recorded
+  limitation, because Keychain/libsecret would add dependencies; that needs its own decision.
+- **HTTPS:** enforced centrally in `Net::Request` by upgrading `http://`, rather than by auditing every metadata
+  source. An opt-out setting exists because user control is also a core value; it is off by default.
+
+## D22 — Software rendering for the shell by default
+Qt Quick's GPU renderer cost about 150 MB of private memory (Direct3D driver allocations) and about 90 ms of startup.
+That conflicts with "lightweight", which outranks the UI goals. The shell therefore uses Qt Quick's software renderer
+by default. The one GPU-only effect (blurred cover art via MultiEffect) was replaced by a cover drawn once in C++ by
+the image provider, which looks the same. Smoother GPU rendering is a user setting. Numbers are in PERFORMANCE.md.
+
+## D23 — Friend server files: manifest instead of wiping
+"Never overwrite manual edits" ruled out the earlier "delete mods/ and copy again". `ServerFileSync` records the
+SHA-1 of every file Wraith copies, and only replaces or removes files that still match it. This is simple, testable and
+needs no prompts during a rebuild.
+
 ## D13 — Card styling is opt-in per theme
 Card painting in the instance grid and the Welcome overlay is gated on `WraithTheme::isActive()`, so every other
 theme renders exactly as in Prism, and no existing option or setting was removed.

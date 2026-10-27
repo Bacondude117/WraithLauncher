@@ -28,7 +28,8 @@ namespace Unified {
 
 QList<Source> allSources()
 {
-    return { Source::Modrinth, Source::CurseForge, Source::FTB, Source::ATLauncher, Source::Technic };
+    // Alphabetical: no source is preferred (see VALUES_AUDIT.md, "Equal treatment").
+    return { Source::ATLauncher, Source::CurseForge, Source::FTB, Source::Modrinth, Source::Technic };
 }
 
 QString sourceName(Source source)
@@ -197,14 +198,21 @@ int sourcePriority(Source source)
 
 void fillPackDetails(Pack& pack)
 {
+    // Tags are shown alphabetically by source name.
     std::sort(pack.hits.begin(), pack.hits.end(),
               [](const SourceHit& a, const SourceHit& b) { return sourcePriority(a.source) < sourcePriority(b.source); });
 
+    // Display data comes from the hit its own source ranked best, not from a favoured source.
+    QList<const SourceHit*> byRank;
+    for (const auto& h : pack.hits)
+        byRank.append(&h);
+    std::stable_sort(byRank.begin(), byRank.end(), [](const SourceHit* a, const SourceHit* b) { return a->rank < b->rank; });
+
     pack.downloads = 0;
-    for (const auto& h : pack.hits) {
+    for (const auto* hp : byRank) {
+        const auto& h = *hp;
         if (h.downloads > 0)
             pack.downloads += h.downloads;
-        // Prefer data from the higher-priority source, fall back to whatever the others have.
         if (pack.name.isEmpty())
             pack.name = h.name;
         if (pack.author.isEmpty())
@@ -273,15 +281,17 @@ void rankPacks(QList<Pack>& packs, const QString& query)
             pack.relevance = std::max(pack.relevance, 0.95);
     }
 
-    // Relevance is bucketed into tiers of 0.1, then popularity decides within a tier.
+    // Relevance is bucketed into tiers of 0.1. Within a tier, packs are ordered by each source's own ordering
+    // (relevance or popularity), so sources are interleaved. Raw download counts are not compared: they aren't
+    // comparable between sources and some sources don't publish them, which would push those sources down.
     auto tier = [](double relevance) { return static_cast<int>(std::floor(relevance * 10.0 + 1e-9)); };
     std::stable_sort(packs.begin(), packs.end(), [&tier](const Pack& a, const Pack& b) {
         if (tier(a.relevance) != tier(b.relevance))
             return tier(a.relevance) > tier(b.relevance);
-        if (a.downloads != b.downloads)
-            return a.downloads > b.downloads;
         if (a.bestRank() != b.bestRank())
             return a.bestRank() < b.bestRank();
+        if (a.hits.size() != b.hits.size())
+            return a.hits.size() > b.hits.size();
         return a.name.compare(b.name, Qt::CaseInsensitive) < 0;
     });
 }

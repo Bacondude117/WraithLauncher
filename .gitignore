@@ -62,3 +62,6 @@ flatbuild
 
 # Snap
 *.snap
+
+# Wraith: local Windows shortcut to the built launcher (absolute paths)
+/Wraith Launcher.lnk

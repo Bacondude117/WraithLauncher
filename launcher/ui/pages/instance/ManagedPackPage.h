@@ -84,7 +84,12 @@ class ManagedPackPage : public QWidget, public BasePage {
      */
     bool runUpdateTask(InstanceTask*);
 
-    void updatePack(const QUrl& url, bool trusted, const QString& versionID = {}, const QString& versionName = {});
+    void updatePack(const QUrl& url,
+                    bool trusted,
+                    const QString& versionID = {},
+                    const QString& versionName = {},
+                    const QString& hashAlgo = {},
+                    const QString& hash = {});
 
     void onUpdateTaskCompleted(bool didSucceed) const;
 

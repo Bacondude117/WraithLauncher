@@ -64,7 +64,7 @@ Rectangle {
             EmptyState {
                 anchors.centerIn: parent
                 title: qsTr("Your library is empty")
-                text: qsTr("Create an instance with any Minecraft version and loader, or install a modpack from Modrinth, CurseForge, FTB, ATLauncher or Technic.")
+                text: qsTr("Create an instance with any Minecraft version and loader, or install a modpack from ATLauncher, CurseForge, FTB, Modrinth or Technic.")
                 WButton { kind: "primary"; icon: "plus"; text: qsTr("New instance"); onClicked: backend.newInstance() }
                 WButton { icon: "browse"; text: qsTr("Browse modpacks"); onClicked: backend.navigate("browse") }
             }

@@ -54,6 +54,7 @@
 #include "tasks/Task.h"
 
 #include "net/ApiRequest.h"
+#include "net/WraithChecksum.h"
 
 #include <QDirListing>
 #include <QFileInfo>
@@ -101,7 +102,11 @@ void InstanceImportTask::downloadFromUrl()
     m_archivePath = entry->getFullPath();
 
     auto filesNetJob = makeShared<NetJob>(tr("Modpack download"), APPLICATION->network());
-    filesNetJob->addNetAction(Net::ApiRequest::makeCached(m_sourceUrl, entry));
+    auto download = Net::ApiRequest::makeCached(m_sourceUrl, entry);
+    // Wraith: verify the pack archive when the source published its hash
+    if (auto* validator = Net::makeChecksumValidator(m_extraInfo.value("file_hash_algo"), m_extraInfo.value("file_hash")))
+        download->addValidator(validator);
+    filesNetJob->addNetAction(download);
 
     connect(filesNetJob.get(), &NetJob::succeeded, this, &InstanceImportTask::processZipPack);
     connect(filesNetJob.get(), &NetJob::progress, this, &InstanceImportTask::setProgress);
