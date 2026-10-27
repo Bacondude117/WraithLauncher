@@ -1658,10 +1658,15 @@ if(WIN32 OR (UNIX AND APPLE))
         COMPONENT bundle
     )
     # Add qtlogging.ini as a config file
+    # Wraith: relative, so "cmake --install --prefix" is honoured (an absolute path fixed it to the configure-time prefix)
+    if(RESOURCES_DEST_DIR)
+        set(Wraith_LOGGING_DEST "${RESOURCES_DEST_DIR}")
+    else()
+        set(Wraith_LOGGING_DEST ".")
+    endif()
     install(
         FILES "qtlogging.ini"
-        # Wraith: relative, so "cmake --install --prefix" is honoured (an absolute path fixed it to the configure-time prefix)
-        DESTINATION ./${RESOURCES_DEST_DIR}
+        DESTINATION ${Wraith_LOGGING_DEST}
         COMPONENT bundle
     )
 endif()

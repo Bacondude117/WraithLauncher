@@ -2,7 +2,8 @@
 # Run through: wraith\build-windows.cmd package   (sets up the compiler environment first)
 # Produces dist\WraithLauncher-<version>-Windows-x64.zip, ...-Portable.zip and SHA256SUMS.txt.
 # Builds in build-release\ so the everyday Debug build in build\ is untouched.
-param([string]$MsaClientId = $env:WRAITH_MSA_CLIENT_ID, [string]$CurseForgeKey = $env:WRAITH_CURSEFORGE_KEY)
+# -BuildOnly: just the Release build; -InstallOnly: build and install into .\install (no zips).
+param([string]$MsaClientId = $env:WRAITH_MSA_CLIENT_ID, [string]$CurseForgeKey = $env:WRAITH_CURSEFORGE_KEY, [switch]$BuildOnly, [switch]$InstallOnly)
 $ErrorActionPreference = "Stop"
 $root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 Set-Location $root
@@ -12,12 +13,24 @@ Write-Output "Packaging Wraith Launcher $version"
 
 # keys are never committed; they come from the environment of the person building the release (SETUP_KEYS.md)
 $configure = @("--preset", "default", "-B", "build-release", "-DWraith_RELEASE=ON", "-DLauncher_BUILD_PLATFORM=windows-x64")
-if ($MsaClientId) { $configure += "-DLauncher_MSA_CLIENT_ID=$MsaClientId" } else { Write-Warning "No Microsoft client ID: users must enter their own in Settings > Network > APIs to sign in (SETUP_KEYS.md)." }
-if ($CurseForgeKey) { $configure += "-DLauncher_CURSEFORGE_API_KEY=$CurseForgeKey" } else { Write-Warning "No CurseForge API key: CurseForge search is off unless users add a key." }
-& cmake @configure
-if ($LASTEXITCODE -ne 0) { throw "configure failed" }
+if ($MsaClientId) { $configure += "-DLauncher_MSA_CLIENT_ID=$MsaClientId" } elseif (-not $BuildOnly -and -not $InstallOnly) { Write-Warning "No Microsoft client ID: users must enter their own in Settings > Network > APIs to sign in (SETUP_KEYS.md)." }
+if ($CurseForgeKey) { $configure += "-DLauncher_CURSEFORGE_API_KEY=$CurseForgeKey" } elseif (-not $BuildOnly -and -not $InstallOnly) { Write-Warning "No CurseForge API key: CurseForge search is off unless users add a key." }
+# configure only when the build folder is new or the keys changed (saves time on every install/package)
+$stamp = Join-Path $root "build-release\wraith-configure.txt"
+$wanted = ($configure -join "`n")
+if (-not (Test-Path $stamp) -or (Get-Content $stamp -Raw) -ne $wanted) {
+    & cmake @configure
+    if ($LASTEXITCODE -ne 0) { throw "configure failed" }
+    Set-Content $stamp $wanted -NoNewline
+}
 & cmake --build build-release --config Release
 if ($LASTEXITCODE -ne 0) { throw "build failed" }
+if ($BuildOnly) { return }
+if ($InstallOnly) {
+    & cmake --install build-release --config Release --prefix (Join-Path $root "install")
+    if ($LASTEXITCODE -ne 0) { throw "install failed" }
+    return
+}
 
 $name = "WraithLauncher-$version-Windows-x64"
 $stage = Join-Path $root "dist\$name"

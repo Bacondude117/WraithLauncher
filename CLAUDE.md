@@ -59,6 +59,9 @@ Gotchas:
 - UI script: `action`/`backend` commands run asynchronously so `modal-*` lines can handle the dialog they open; `key
   <seq>` runs a binding. Real key presses for QML: PostMessage WM_KEYDOWN to the main window (no modifiers).
 - Measure performance with `wraith\tools\measure-startup.ps1` (PERFORMANCE.md) after anything that touches startup.
+- Disk use: `build\` is the Debug dev build only; Release builds live only in `build-release\` (install, package).
+  Don't leave test copies of data folders behind (`build\perf` once grew to 16 GB). Keys for local builds are in the
+  git-ignored `wraith\local-keys.cmd` (SETUP_KEYS.md); never commit or print them.
 - `wraith\build-windows.cmd install` deploys QML imports via windeployqt `--qmldir`; it once exited 255 mid-way
   and succeeded when re-run.
 

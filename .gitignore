@@ -68,3 +68,6 @@ flatbuild
 
 # Wraith: release packages (wraith\build-windows.cmd package)
 /dist
+
+# Wraith: local API keys for builds (never committed; see SETUP_KEYS.md)
+/wraith/local-keys.cmd

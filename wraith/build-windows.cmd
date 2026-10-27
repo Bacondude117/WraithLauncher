@@ -13,14 +13,17 @@ set "VCPKG_VISUAL_STUDIO_PATH=%WRAITH_VS%"
 set "CMAKE_PREFIX_PATH=%WRAITH_QT%"
 set "PATH=%WRAITH_QT%\bin;%JAVA_HOME%\bin;C:\Program Files\Git\cmd;C:\Program Files\CMake\bin;%LOCALAPPDATA%\Microsoft\WinGet\Links;%PATH%"
 cd /d "%~dp0.." || exit /b 1
+rem local API keys (git-ignored, see SETUP_KEYS.md)
+if exist "%~dp0local-keys.cmd" call "%~dp0local-keys.cmd"
 
 if "%1"=="configure" cmake --preset default
 if "%1"=="build" cmake --build --preset default --config Debug
-if "%1"=="build-release" cmake --build --preset default --config Release
+rem Release builds live only in build-release\ (with keys, Wraith_RELEASE=ON); build\ is the Debug dev build
+if "%1"=="build-release" powershell -NoProfile -ExecutionPolicy Bypass -File wraith\tools\package-windows.ps1 -BuildOnly
 rem FileSystem test needs symlink rights (admin or Developer Mode); see PROGRESS.md
 if "%1"=="test" ctest --preset default --build-config Debug -E "^FileSystem$"
-rem install: Release build (faster and smaller); "install-debug" keeps the old Debug variant
-if "%1"=="install" cmake --build --preset default --config Release && cmake --install build --config Release --prefix install
+rem install: the Release build into .\install (what "Wraith Launcher.cmd" starts); "install-debug" uses the Debug build
+if "%1"=="install" powershell -NoProfile -ExecutionPolicy Bypass -File wraith\tools\package-windows.ps1 -InstallOnly
 rem package: release zips in dist\ (RELEASE.md); keys from WRAITH_MSA_CLIENT_ID / WRAITH_CURSEFORGE_KEY
 if "%1"=="package" powershell -NoProfile -ExecutionPolicy Bypass -File wraith\tools\package-windows.ps1
 if "%1"=="install-debug" cmake --install build --config Debug --prefix install

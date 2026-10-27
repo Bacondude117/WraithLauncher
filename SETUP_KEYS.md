@@ -12,7 +12,21 @@ are unavailable.
 
 The defaults live in the top-level `CMakeLists.txt` ("API Keys" section) and are empty placeholders.
 
-## Supplying keys at build time (recommended, keeps them out of git)
+## Easiest on Windows: `wraith\local-keys.cmd` (git-ignored)
+
+`wraith\build-windows.cmd` loads this file if it exists, and `install`, `build-release` and `package` pass the keys to
+the Release build in `build-release\` (the Debug dev build in `build\` stays key-free):
+
+```
+@echo off
+set "WRAITH_CURSEFORGE_KEY=<key>"
+set "WRAITH_MSA_CLIENT_ID=<guid>"
+```
+
+Keys end up inside the built program (as with every launcher that ships them), so only publish builds made with keys
+you are allowed to distribute.
+
+## Supplying keys at build time (keeps them out of git)
 
 ```
 cmake --preset default -D Launcher_MSA_CLIENT_ID=<guid> -D Launcher_CURSEFORGE_API_KEY=<key>

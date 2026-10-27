@@ -40,6 +40,7 @@ for ($i = 1; $i -le $Runs; $i++) {
     }
     Stop-Process -Id $p.Id -Force
     Start-Sleep -Milliseconds 800
+    Remove-Item -Recurse -Force $dir -ErrorAction SilentlyContinue  # each run's copy of the data folder is only for that run
 }
 $results | Format-Table -AutoSize | Out-String | Write-Output
 function Median($values) { $s = $values | Sort-Object; $s[[int][math]::Floor($s.Count / 2)] }
