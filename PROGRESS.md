@@ -84,6 +84,13 @@ Resume from the first unchecked step in PLAN.md.
     gallery, an import scan of this PC's launchers).
   - Not verified (needs a game launch, account or real crash): test launch, the crash toast, update notifications
     with a real newer version, and copying an imported instance.
+- Round 5 (user request: playit.gg + release):
+  - **playit.gg:** an optional tunnel for friend servers. The official signed agent is checked by SHA-256 and code
+    signature, and starts and stops with the server. Install verified; linking an account and the live tunnel need
+    the user\'s playit.gg account.
+  - **Release:** version 0.1.0, Wraith_RELEASE, and wraith\\build-windows.cmd package, which produces dist\\ zips
+    (normal and portable) plus SHA256SUMS after a smoke test. RELEASE.md (checklist) and RELEASE_NOTES.md. Fixed the
+    upstream qtlogging.ini install path.
 
 ## Next
 - Follow-ups are in SUMMARY.md under "Unfinished and risky": a real game launch and server start (both need an

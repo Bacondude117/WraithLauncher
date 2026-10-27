@@ -65,3 +65,6 @@ flatbuild
 
 # Wraith: local Windows shortcut to the built launcher (absolute paths)
 /Wraith Launcher.lnk
+
+# Wraith: release packages (wraith\build-windows.cmd package)
+/dist

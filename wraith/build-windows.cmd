@@ -1,6 +1,6 @@
 @echo off
 rem Wraith Launcher - Windows developer build helper.
-rem Usage: wraith\build-windows.cmd configure|build|build-release|test|run|install|install-debug
+rem Usage: wraith\build-windows.cmd configure|build|build-release|test|run|install|install-debug|package
 rem   install: copies a self-contained, double-clickable launcher (with Qt DLLs) into .\install
 rem Override any of these paths by setting the variable before calling.
 if not defined WRAITH_VS set "WRAITH_VS=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools"
@@ -21,6 +21,8 @@ rem FileSystem test needs symlink rights (admin or Developer Mode); see PROGRESS
 if "%1"=="test" ctest --preset default --build-config Debug -E "^FileSystem$"
 rem install: Release build (faster and smaller); "install-debug" keeps the old Debug variant
 if "%1"=="install" cmake --build --preset default --config Release && cmake --install build --config Release --prefix install
+rem package: release zips in dist\ (RELEASE.md); keys from WRAITH_MSA_CLIENT_ID / WRAITH_CURSEFORGE_KEY
+if "%1"=="package" powershell -NoProfile -ExecutionPolicy Bypass -File wraith\tools\package-windows.ps1
 if "%1"=="install-debug" cmake --install build --config Debug --prefix install
 if "%1"=="run" (
     if not exist build\run-data mkdir build\run-data

@@ -33,6 +33,8 @@ wraith\build-windows.cmd configure   # cmake --preset default (Ninja Multi-Confi
 wraith\build-windows.cmd build       # Debug build -> build\Debug\wraithlauncher.exe
 wraith\build-windows.cmd test        # ctest, excluding FileSystem (needs symlink privilege)
 wraith\build-windows.cmd run         # launches with a throwaway data dir: build\run-data
+wraith\build-windows.cmd install     # Release build into install\ (what "Wraith Launcher.cmd" starts)
+wraith\build-windows.cmd package     # release zips + SHA256SUMS in dist\ (build-release\, Wraith_RELEASE=ON); RELEASE.md
 ```
 
 Gotchas:
