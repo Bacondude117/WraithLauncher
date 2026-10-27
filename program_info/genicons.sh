@@ -1,6 +1,7 @@
 #!/bin/bash
 
-LAUNCHER_APPID="org.prismlauncher.PrismLauncher"
+# Wraith: wraith/tools/gen_icons.py produces the same outputs without external tools.
+LAUNCHER_APPID="io.github.wraithlauncher.WraithLauncher"
 
 svg2png() {
     input_file="$1"

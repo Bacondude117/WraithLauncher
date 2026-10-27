@@ -18,3 +18,4 @@ Resume from the first unchecked step in PLAN.md.
 - `FileSystem` test needs symlink privilege (admin or Developer Mode). Excluded in the helper script.
   Running it without privilege causes looping UAC prompts — don't.
 - CMake configure prints "'vswhere.exe' is not recognized" — harmless (vcvars probing).
+
