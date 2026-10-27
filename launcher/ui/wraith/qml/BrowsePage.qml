@@ -28,6 +28,11 @@ Rectangle {
         selected = -1
         model.search(query)
     }
+    // used by the UI test script
+    function installSelected(unused) {
+        if (versionsState === "ready" && versions.length > 0)
+            model.installModrinth(selected, versions[versionBox.currentIndex].id)
+    }
     function select(row) {
         row = Number(row)
         selected = row

@@ -297,9 +297,9 @@ void Shell::resizeEvent(QResizeEvent* event)
     layoutToasts();
 }
 
-// QWidget::grab()/render() trip an overflow assert in Qt's debug build once the window hosts QQuickWidgets, so
-// screenshots start from the screen contents of the window and then paint every visible Qt Quick view from its
-// own framebuffer on top (which also keeps third-party overlays drawn into the swap chain out of the picture).
+// Screenshots: QWidget::grab() renders the widgets; every visible Qt Quick view is then painted from its own
+// framebuffer on top (grab() doesn't reliably include them), and toasts again above those. Nothing comes from the
+// screen, so third-party overlays drawn into the swap chain stay out of the picture.
 static void paintQuickViews(QPainter& painter, QWidget* widget, QWidget* window)
 {
     if (!widget->isVisible())
@@ -317,20 +317,13 @@ static void paintQuickViews(QPainter& painter, QWidget* widget, QWidget* window)
 
 static QImage captureWindow(QWidget* window)
 {
-    window->raise();
-    window->activateWindow();
-    const QPoint topLeft = window->mapToGlobal(QPoint());
-    QPixmap shot = window->screen()->grabWindow(0, topLeft.x(), topLeft.y(), window->width(), window->height());
+    QPixmap shot = window->grab();
     {
         QPainter painter(&shot);
         paintQuickViews(painter, window, window);
-        // toasts float above the Qt Quick views: take them from the screen again
         for (auto* toast : window->findChildren<QFrame*>("wraithToast")) {
-            if (!toast->isVisible())
-                continue;
-            const QPoint pos = toast->mapTo(window, QPoint());
-            painter.drawPixmap(QRect(pos, toast->size()),
-                               window->screen()->grabWindow(0, topLeft.x() + pos.x(), topLeft.y() + pos.y(), toast->width(), toast->height()));
+            if (toast->isVisible())
+                painter.drawPixmap(QRect(toast->mapTo(window, QPoint()), toast->size()), toast->grab());
         }
     }
     return shot.toImage();
