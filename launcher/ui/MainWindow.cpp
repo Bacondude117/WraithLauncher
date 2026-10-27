@@ -402,7 +402,12 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     // load the news
     {
-        m_newsChecker->reloadNews();
+        if (BuildConfig.NEWS_RSS_URL.isEmpty()) {
+            // No feed configured (e.g. a rebranded build): keep the toolbar available but hidden
+            ui->newsToolBar->hide();
+        } else {
+            m_newsChecker->reloadNews();
+        }
         updateNewsLabel();
     }
 

@@ -80,6 +80,7 @@
 #include "ui/pagedialog/PageDialog.h"
 
 #include "ui/themes/ThemeManager.h"
+#include "ui/themes/WraithTheme.h"
 
 #include "ApplicationMessage.h"
 
@@ -1269,27 +1270,13 @@ bool Application::createSetupWizard()
     bool themeInterventionRequired = !validWidgets || !validIcons;
     bool wizardRequired = javaRequired || languageRequired || pasteInterventionRequired || themeInterventionRequired || askjava || login;
     if (wizardRequired) {
-        const bool darkMode = QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
         // set default theme after going into theme wizard
+        // Wraith: the dark Wraith theme is the default everywhere; all other themes stay selectable.
         if (!validIcons) {
-            QString defaultIconTheme;
-            if (QApplication::style()->name() == "breeze") {
-                defaultIconTheme = darkMode ? "breeze_dark" : "breeze_light";
-            } else {
-                defaultIconTheme = darkMode ? "flat_white" : "flat";
-            }
-
-            settings()->set("IconTheme", defaultIconTheme);
+            settings()->set("IconTheme", QStringLiteral("flat_white"));
         }
         if (!validWidgets) {
-#if defined(Q_OS_LINUX)
-            const QString style = "system";
-#else
-            const QString style = darkMode ? QStringLiteral("dark") : QStringLiteral("bright");
-
-#endif
-
-            settings()->set("ApplicationTheme", style);
+            settings()->set("ApplicationTheme", QString(WraithTheme::themeId));
         }
 
         m_themeManager->applyCurrentlySelectedTheme(true);

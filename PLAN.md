@@ -18,7 +18,7 @@ Each step is small, builds cleanly (`wraith\build-windows.cmd build`), passes te
       Test: builds; CurseForge page hidden when key empty; MS login reports missing client ID.
 - [x] 1.3 Original ghost icon: new SVG + regenerated .ico/.png (scripted with Python, no external tools);
       replace launcher.svg in the multimc icon theme. Test: window/taskbar icon is the ghost.
-- [ ] 1.4 `Wraith` theme (`WraithTheme.{h,cpp}`): charcoal palette, pale-cyan/violet accents, small QSS.
+- [x] 1.4 `Wraith` theme (`WraithTheme.{h,cpp}`): charcoal palette, pale-cyan/violet accents, small QSS.
       Registered as built-in; becomes the default on first run. Other themes unchanged.
 - [ ] 1.5 README "About this fork" section (fork of Prism, not affiliated/endorsed, GPL-3.0, credits).
 
