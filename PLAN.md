@@ -52,4 +52,4 @@ Each step is small, builds cleanly (`wraith\build-windows.cmd build`), passes te
       port/memory, EULA consent, LAN address hint.
 
 ## Phase 5 — Wrap-up
-- [ ] 5.1 SUMMARY.md (changes, manual test steps, decisions, unfinished/risky items).
+- [x] 5.1 SUMMARY.md (changes, manual test steps, decisions, unfinished/risky items).

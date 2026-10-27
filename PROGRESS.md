@@ -28,8 +28,12 @@ Resume from the first unchecked step in PLAN.md.
   and the "Friend Server" instance page. Verified live: vanilla 1.20.1 setup downloaded server.jar, copied lithium,
   skipped sodium + modmenu, Start stays disabled until the EULA box is ticked.
 
+- 5.1 SUMMARY.md written.
+
 ## Next
-- 5.1 SUMMARY.md.
+- All planned steps are done. Follow-ups are in SUMMARY.md under "Unfinished and risky": a real server start
+  test (needs EULA consent), Fabric/Forge/NeoForge server setup tests, Quilt support, and a CurseForge test
+  with a key.
 
 ## Known issues
 - `FileSystem` test needs symlink privilege (admin or Developer Mode). Excluded in the helper script.
