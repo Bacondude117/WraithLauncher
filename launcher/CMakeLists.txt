@@ -1026,6 +1026,14 @@ SET(LAUNCHER_SOURCES
     ui/pages/modplatform/technic/TechnicPage.cpp
     ui/pages/modplatform/technic/TechnicPage.h
 
+    # Wraith: unified modpack browser
+    ui/pages/modplatform/unified/UnifiedModel.h
+    ui/pages/modplatform/unified/UnifiedModel.cpp
+    ui/pages/modplatform/unified/UnifiedPage.h
+    ui/pages/modplatform/unified/UnifiedPage.cpp
+    ui/pages/modplatform/unified/AdvancedSourcesPage.h
+    ui/pages/modplatform/unified/AdvancedSourcesPage.cpp
+
     ui/pages/modplatform/ImportPage.cpp
     ui/pages/modplatform/ImportPage.h
 
@@ -1133,6 +1141,8 @@ SET(LAUNCHER_SOURCES
     ui/widgets/VariableSizedImageObject.cpp
     ui/widgets/ProjectItem.h
     ui/widgets/ProjectItem.cpp
+    ui/widgets/PackCardDelegate.h
+    ui/widgets/PackCardDelegate.cpp
     ui/widgets/SubTaskProgressBar.h
     ui/widgets/SubTaskProgressBar.cpp
     ui/widgets/VersionListView.cpp

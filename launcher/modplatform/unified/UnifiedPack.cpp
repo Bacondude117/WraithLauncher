@@ -267,7 +267,10 @@ void rankPacks(QList<Pack>& packs, const QString& query)
         // Each source already ranks by relevance (including descriptions/tags we don't see); trust its top results.
         const double sourceRank = 1.0 / (1.0 + pack.bestRank() / 4.0);
         const double multiSource = 0.05 * static_cast<double>(pack.hits.size() - 1);
-        pack.relevance = std::min(1.0, 0.6 * text + 0.4 * sourceRank + multiSource);
+        pack.relevance = std::min(1.0, 0.7 * text + 0.3 * sourceRank + multiSource);
+        // An exact name match is what the user typed; keep it at the top tier whatever the sources say.
+        if (text >= 1.0)
+            pack.relevance = std::max(pack.relevance, 0.95);
     }
 
     // Relevance is bucketed into tiers of 0.1, then popularity decides within a tier.

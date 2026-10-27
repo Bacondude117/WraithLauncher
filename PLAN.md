@@ -28,14 +28,14 @@ Each step is small, builds cleanly (`wraith\build-windows.cmd build`), passes te
 - [x] 2.2 Source searchers (`UnifiedSearch.{h,cpp}`): parallel NetJobs for Modrinth `/search`, CurseForge
       `/mods/search` (only when a key is configured), FTB `/modpack/search` + details, Technic `/search`,
       ATLauncher `packsnew.json` filtered locally. Each source failure is isolated.
-- [ ] 2.3 `UnifiedPage` (+ list model) in New Instance dialog: search box, merged cards with source tags,
+- [x] 2.3 `UnifiedPage` (+ list model) in New Instance dialog: search box, merged cards with source tags,
       details pane, "Install from <source>" buttons that hand off to the existing per-source page with the
       search pre-filled (reuses all version-selection / install code).
-- [ ] 2.4 Page ordering: "Browse Modpacks" first among modpack sources; per-source pages kept, labelled
-      "(Advanced)". Test manually: search "skyblock" shows merged multi-source cards.
+- [x] 2.4 Page ordering: "Browse Modpacks" first among modpack sources; per-source pages kept unchanged after an
+      "Advanced" heading page that explains/links them. Test manually: search "skyblock" shows merged multi-source cards.
 
 ## Phase 3 â€” Goal 2: UI refresh (theme-first, no removed options)
-- [ ] 3.1 Card delegate for unified results (rounded card, icon, title, author, summary, source chips, downloads).
+- [x] 3.1 Card delegate for unified results (rounded card, icon, title, author, summary, source chips, downloads).
 - [ ] 3.2 Wraith stylesheet polish: spacing, rounded inputs/buttons, list hover/selection, tab bar.
 - [ ] 3.3 Instance grid: optional card-style painting in `ListViewDelegate` when the Wraith theme is active
       (rounded hover/selection backgrounds, more padding). Existing behaviour unchanged elsewhere.

@@ -142,6 +142,17 @@ class UnifiedPackTest : public QObject {
         QCOMPARE(packs.first().name, QString("Tekkit"));
     }
 
+    void rankExactMatchFirst()
+    {
+        // The source lists "Tekkit Legends" before "Tekkit"; the exact match must still win.
+        auto packs = mergeHits({
+            hit(Source::Technic, "tekkit-legends", "Tekkit Legends", "", -1, 0),
+            hit(Source::Technic, "tekkitmain", "Tekkit", "", -1, 1),
+        });
+        rankPacks(packs, "tekkit");
+        QCOMPARE(packs.first().name, QString("Tekkit"));
+    }
+
     void rankPopularityWithinSameRelevance()
     {
         auto packs = mergeHits({

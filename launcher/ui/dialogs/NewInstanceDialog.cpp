@@ -66,6 +66,8 @@
 #include "ui/pages/modplatform/legacy_ftb/Page.h"
 #include "ui/pages/modplatform/modrinth/ModrinthPage.h"
 #include "ui/pages/modplatform/technic/TechnicPage.h"
+#include "ui/pages/modplatform/unified/AdvancedSourcesPage.h"
+#include "ui/pages/modplatform/unified/UnifiedPage.h"
 #include "ui/widgets/PageContainer.h"
 
 NewInstanceDialog::NewInstanceDialog(const QString& initialGroup,
@@ -204,6 +206,9 @@ QList<BasePage*> NewInstanceDialog::getPages()
 
     pages.append(new CustomPage(this));
     pages.append(m_importPage);
+    // Wraith: one search over every source first; the per-source pages follow under "Advanced"
+    pages.append(new UnifiedPage(this));
+    pages.append(new AdvancedSourcesPage({ "atl", "flame", "ftb", "legacy_ftb", "import_ftb", "modrinth", "technic" }));
     pages.append(new AtlPage(this));
     if (APPLICATION->capabilities() & Application::SupportsFlame) {
         pages.append(new FlamePage(this));

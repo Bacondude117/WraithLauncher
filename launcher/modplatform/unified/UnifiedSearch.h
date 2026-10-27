@@ -45,6 +45,7 @@ class UnifiedSearch : public QObject {
     QString query() const { return m_query; }
     const QList<Pack>& packs() const { return m_packs; }
     bool isRunning() const { return !m_pending.isEmpty(); }
+    const QList<Source>& pendingSources() const { return m_pending; }
     const QHash<Source, QString>& errors() const { return m_errors; }
 
     /** Sources that will be searched; CurseForge needs an API key. */
