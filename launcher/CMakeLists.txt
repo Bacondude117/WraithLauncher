@@ -822,6 +822,23 @@ SET(LAUNCHER_SOURCES
     ui/MainWindow.h
     ui/MainWindow.cpp
     ui/MainWindowWraith.cpp
+
+    # Wraith shell (Qt Quick UI over MainWindow's actions)
+    ui/wraith/WraithBackend.cpp
+    ui/wraith/WraithBackend.h
+    ui/wraith/WraithInstanceModel.cpp
+    ui/wraith/WraithInstanceModel.h
+    ui/wraith/WraithInstancePage.cpp
+    ui/wraith/WraithInstancePage.h
+    ui/wraith/WraithNewInstance.cpp
+    ui/wraith/WraithNewInstance.h
+    ui/wraith/WraithSettingsPage.cpp
+    ui/wraith/WraithSettingsPage.h
+    ui/wraith/WraithShell.cpp
+    ui/wraith/WraithShell.h
+    ui/wraith/WraithStyle.cpp
+    ui/wraith/WraithStyle.h
+
     ui/InstanceWindow.h
     ui/InstanceWindow.cpp
     ui/ViewLogWindow.h
@@ -1222,7 +1239,21 @@ if(WIN32)
     )
 endif()
 
+# Wraith shell: QML views and line icons, collected into a generated wraith.qrc (prefix /wraith)
+file(GLOB WRAITH_QRC_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/ui/wraith" CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/ui/wraith/qml/*.qml"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ui/wraith/qml/style/*"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ui/wraith/icons/*.svg"
+)
+set(WRAITH_QRC_CONTENT "<RCC>\n  <qresource prefix=\"/wraith\">\n")
+foreach(WRAITH_QRC_FILE ${WRAITH_QRC_FILES})
+    string(APPEND WRAITH_QRC_CONTENT "    <file alias=\"${WRAITH_QRC_FILE}\">${CMAKE_CURRENT_SOURCE_DIR}/ui/wraith/${WRAITH_QRC_FILE}</file>\n")
+endforeach()
+string(APPEND WRAITH_QRC_CONTENT "  </qresource>\n</RCC>\n")
+file(CONFIGURE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/wraith.qrc" CONTENT "${WRAITH_QRC_CONTENT}")
+
 qt_add_resources(LAUNCHER_RESOURCES
+    "${CMAKE_CURRENT_BINARY_DIR}/wraith.qrc"
     resources/backgrounds/backgrounds.qrc
     resources/multimc/multimc.qrc
     resources/pe_dark/pe_dark.qrc
@@ -1307,6 +1338,10 @@ target_link_libraries(Launcher_logic
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::NetworkAuth
     Qt${QT_VERSION_MAJOR}::OpenGL
+    Qt${QT_VERSION_MAJOR}::Qml
+    Qt${QT_VERSION_MAJOR}::Quick
+    Qt${QT_VERSION_MAJOR}::QuickControls2
+    Qt${QT_VERSION_MAJOR}::QuickWidgets
     ${Launcher_QT_DBUS}
     ${Launcher_QT_LIBS}
 )
@@ -1518,7 +1553,8 @@ endif()
 # NOTE: it seems that this absolutely has to be here, and nowhere else.
 if(WIN32 OR (UNIX AND APPLE))
     if(WIN32)
-        set(QT_DEPLOY_TOOL_OPTIONS "--no-opengl-sw --no-quick-import --no-system-d3d-compiler --no-system-dxc-compiler --skip-plugin-types generic,networkinformation")
+        # Wraith: QML imports are deployed (the shell is Qt Quick), found by scanning the shell's QML sources
+        set(QT_DEPLOY_TOOL_OPTIONS "--no-opengl-sw --qmldir ${CMAKE_CURRENT_SOURCE_DIR}/ui/wraith/qml --no-system-d3d-compiler --no-system-dxc-compiler --skip-plugin-types generic,networkinformation")
     endif()
 
     qt_generate_deploy_script(

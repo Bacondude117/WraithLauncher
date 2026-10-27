@@ -658,6 +658,7 @@ Application::Application(int& argc, char** argv) : QApplication(argc, argv)
         m_settings->registerSetting("LastUsedGroupForNewInstance", QString());
 
         m_settings->registerSetting("MenuBarInsteadOfToolBar", false);
+        m_settings->registerSetting("WraithClassicLayout", false);  // Wraith: use Prism's layout instead of the Wraith shell
 
         m_settings->registerSetting("NumberOfConcurrentTasks", 10);
         m_settings->registerSetting("NumberOfConcurrentDownloads", 6);

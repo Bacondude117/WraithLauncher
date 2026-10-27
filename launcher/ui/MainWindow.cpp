@@ -331,13 +331,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
         view->setSourceOfGroupCollapseStatus(
             [](const QString& groupName) -> bool { return APPLICATION->instances()->isGroupCollapsed(groupName); });
         connect(view, &InstanceView::groupStateChanged, APPLICATION->instances(), &InstanceList::on_GroupStateChanged);
-        // Wraith: the view sits in a pane so a library header can go above it
-        m_libraryPane = new QWidget(ui->centralWidget);
-        auto* libraryLayout = new QVBoxLayout(m_libraryPane);
-        libraryLayout->setContentsMargins(0, 0, 0, 0);
-        libraryLayout->setSpacing(0);
-        libraryLayout->addWidget(view);
-        ui->horizontalLayout->addWidget(m_libraryPane);
+        ui->horizontalLayout->addWidget(view);
     }
     // The cat background
     {
@@ -406,8 +400,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     // TODO: refresh accounts here?
     // auto accounts = APPLICATION->accounts();
 
-    setupWraithLayout();
-
     // load the news
     {
         if (BuildConfig.NEWS_RSS_URL.isEmpty()) {
@@ -441,6 +433,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
     view->setFocus();
 
     retranslateUi();
+
+    setupWraithShell();
 }
 
 // macOS always has a native menu bar, so these fixes are not applicable
@@ -448,7 +442,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), ui(new Ui::MainWi
 #ifndef Q_OS_MAC
 void MainWindow::keyReleaseEvent(QKeyEvent* event)
 {
-    if (event->key() == Qt::Key_Alt && !APPLICATION->settings()->get("MenuBarInsteadOfToolBar").toBool())
+    if (event->key() == Qt::Key_Alt && !m_wraithShell && !APPLICATION->settings()->get("MenuBarInsteadOfToolBar").toBool())
         ui->menuBar->setVisible(!ui->menuBar->isVisible());
     else
         QMainWindow::keyReleaseEvent(event);
@@ -596,6 +590,8 @@ void MainWindow::showInstanceContextMenu(const QPoint& pos)
 
 void MainWindow::updateMainToolBar()
 {
+    if (m_wraithShell)
+        return;  // the Wraith shell has no toolbar or menu bar
     ui->menuBar->setVisible(APPLICATION->settings()->get("MenuBarInsteadOfToolBar").toBool());
     ui->mainToolBar->setVisible(ui->menuBar->isNativeMenuBar() || !APPLICATION->settings()->get("MenuBarInsteadOfToolBar").toBool());
 }

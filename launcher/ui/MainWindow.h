@@ -60,6 +60,9 @@ class BaseProfilerFactory;
 class InstanceView;
 class KonamiCode;
 class InstanceTask;
+namespace Wraith {
+class Shell;
+}
 
 namespace Ui {
 class MainWindow;
@@ -80,6 +83,17 @@ class MainWindow : public QMainWindow {
     void updatesAllowedChanged(bool allowed);
 
     void processURLs(QList<QUrl> urls);
+
+    // Wraith shell hooks (see ui/wraith/): the shell drives the existing actions through these
+    bool wraithShellActive() const { return m_wraithShell != nullptr; }
+    Wraith::Shell* wraithShell() const { return m_wraithShell; }
+    void wraithSelectInstance(const QString& id) { setSelectedInstanceById(id); }
+    void wraithAddInstance(const QString& url = QString(), const QMap<QString, QString>& extra = {}, const QString& pageId = QString())
+    {
+        addInstance(url, extra, pageId);
+    }
+    void wraithInstallFromTask(InstanceTask* task) { instanceFromInstanceTask(task); }
+    void wraithRenameInstance(MinecraftInstance* instance, const QString& name);
    signals:
     void isClosing();
 
@@ -224,9 +238,8 @@ class MainWindow : public QMainWindow {
 
     void addInstance(const QString& url = QString(), const QMap<QString, QString>& extra_info = {}, const QString& pageId = QString());
 
-    // Wraith: Modrinth-style layout (left navigation rail, library header, Play button); see MainWindowWraith.cpp
-    void setupWraithLayout();
-    void applyWraithLayout(bool enabled);
+    // Wraith: mounts the Wraith shell over the classic layout unless the classic layout is chosen; see MainWindowWraith.cpp
+    void setupWraithShell();
     void setCatBackground(bool enabled);
     void updateCatState();
     void updateInstanceToolIcon(QString new_icon);
@@ -262,11 +275,6 @@ class MainWindow : public QMainWindow {
     // managed by the application object
     Task* m_versionLoadTask = nullptr;
 
-    // Wraith layout widgets (managed by Qt)
-    QWidget* m_libraryPane = nullptr;
-    QWidget* m_wraithHeader = nullptr;
-    QLineEdit* m_wraithSearch = nullptr;
-    QList<QAction*> m_wraithRailActions;
-    Qt::ToolButtonStyle m_classicToolButtonStyle = Qt::ToolButtonTextBesideIcon;
-    QSize m_classicIconSize;
+    // Wraith shell (managed by Qt); null while the classic layout is used
+    Wraith::Shell* m_wraithShell = nullptr;
 };
