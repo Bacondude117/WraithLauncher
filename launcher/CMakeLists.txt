@@ -493,6 +493,18 @@ set(API_SOURCES
     creator/TextDiff.h
     creator/TextDiff.cpp
 
+    # Wraith: advanced user tools and player comforts (JVM presets, crash analysis, imports, shared folders)
+    advanced/JvmPresets.h
+    advanced/JvmPresets.cpp
+    advanced/CrashAnalyzer.h
+    advanced/CrashAnalyzer.cpp
+    advanced/LauncherImport.h
+    advanced/LauncherImport.cpp
+    advanced/ForeignImportTask.h
+    advanced/ForeignImportTask.cpp
+    advanced/SharedFolders.h
+    advanced/SharedFolders.cpp
+
     # Wraith: security helpers (encrypted token storage, download checksums)
     security/SecretStore.h
     security/SecretStore.cpp
@@ -851,6 +863,8 @@ SET(LAUNCHER_SOURCES
     ui/wraith/WraithBrowse.h
     ui/wraith/WraithCreator.cpp
     ui/wraith/WraithCreator.h
+    ui/wraith/WraithLogs.cpp
+    ui/wraith/WraithLogs.h
     ui/wraith/WraithInstanceModel.cpp
     ui/wraith/WraithInstanceModel.h
     ui/wraith/WraithInstancePage.cpp

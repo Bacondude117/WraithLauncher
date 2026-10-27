@@ -56,6 +56,9 @@ class InstancePage : public QWidget, public ShellPage {
     QWidget* buildContentTab(const QList<BasePage*>& pages);
     QWidget* buildWorldsTab(BasePage* page);
     QWidget* buildSnapshotsTab();
+    QWidget* buildPerformanceCard(QWidget* parent);
+    QWidget* buildLogsTab(const QList<BasePage*>& pages);
+    QWidget* buildSharedFoldersCard(QWidget* parent);
     /** A tab that is one Qt Quick view with a C++ model (set as its "model" property). */
     QWidget* buildQuickTab(const QString& key, const QString& qml, QObject* model);
     QWidget* buildSettingsTab(const QList<BasePage*>& pages);

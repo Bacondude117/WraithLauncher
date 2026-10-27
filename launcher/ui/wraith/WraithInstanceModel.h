@@ -20,6 +20,7 @@
 #include <QSortFilterProxyModel>
 #include <QVariantMap>
 
+class BaseInstance;
 class MinecraftInstance;
 
 namespace Wraith {
@@ -38,6 +39,10 @@ QString iconUrl(const QString& iconKey);
 /** Everything the QML views show about one instance. */
 QVariantMap instanceInfo(MinecraftInstance* instance);
 
+/** Free-form tags of an instance (stored as "WraithTags" in its instance.cfg). */
+QStringList instanceTags(BaseInstance* instance);
+void setInstanceTags(BaseInstance* instance, const QStringList& tags);
+
 /**
  * The instance list as QML sees it: named roles, a text/loader/group filter and the three sort orders.
  */
@@ -47,6 +52,8 @@ class InstanceModel : public QSortFilterProxyModel {
     Q_PROPERTY(QString loaderFilter READ loaderFilter WRITE setLoaderFilter NOTIFY filtersChanged)
     Q_PROPERTY(QString groupFilter READ groupFilter WRITE setGroupFilter NOTIFY filtersChanged)
     Q_PROPERTY(QString sortMode READ sortMode WRITE setSortMode NOTIFY filtersChanged)
+    Q_PROPERTY(QString tagFilter READ tagFilter WRITE setTagFilter NOTIFY filtersChanged)
+    Q_PROPERTY(QStringList allTags READ allTags NOTIFY filtersChanged)
     Q_PROPERTY(int count READ count NOTIFY countChanged)
 
    public:
@@ -62,6 +69,8 @@ class InstanceModel : public QSortFilterProxyModel {
         PlayTimeTextRole,
         RunningRole,
         CanLaunchRole,
+        TagsRole,
+        UpdateRole,
     };
 
     explicit InstanceModel(QObject* parent = nullptr);
@@ -76,6 +85,11 @@ class InstanceModel : public QSortFilterProxyModel {
     QString groupFilter() const { return m_groupFilter; }
     void setGroupFilter(const QString& group);
     QString sortMode() const { return m_sortMode; }
+    QString tagFilter() const { return m_tagFilter; }
+    void setTagFilter(const QString& tag);
+    QStringList allTags() const;
+    /** Tags or update badges changed outside the model. */
+    void tagsChanged();
     void setSortMode(const QString& mode);
     int count() const { return rowCount(); }
 
@@ -98,6 +112,7 @@ class InstanceModel : public QSortFilterProxyModel {
     QString m_loaderFilter;
     QString m_groupFilter;
     QString m_sortMode = "name";
+    QString m_tagFilter;
 };
 
 }  // namespace Wraith

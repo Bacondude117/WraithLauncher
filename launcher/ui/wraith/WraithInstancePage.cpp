@@ -31,10 +31,18 @@
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
+#include <QDir>
+#include <QMessageBox>
+
 #include "Application.h"
+#include "FileSystem.h"
+#include "HardwareInfo.h"
 #include "InstanceList.h"
 #include "InstancePageProvider.h"
+#include "advanced/JvmPresets.h"
+#include "advanced/SharedFolders.h"
 #include "minecraft/MinecraftInstance.h"
+#include "minecraft/PackProfile.h"
 #include "settings/SettingsObject.h"
 #include "ui/MainWindow.h"
 #include "ui/pages/instance/InstanceSettingsPage.h"
@@ -49,6 +57,7 @@
 #include "WraithListModels.h"
 #include "WraithPageHost.h"
 #include "WraithCreator.h"
+#include "WraithLogs.h"
 #include "WraithSnapshots.h"
 #include "WraithStyle.h"
 #include "WraithWidgets.h"
@@ -142,6 +151,8 @@ InstancePage::InstancePage(Shell* shell, MinecraftInstance* instance, QWidget* p
             widget = buildWorldsTab(pages.first());
         else if (tab.key == "snapshots")
             widget = buildSnapshotsTab();
+        else if (tab.key == "logs" && !pages.isEmpty())
+            widget = buildLogsTab(pages);
         else if (tab.key == "creator")
             widget = buildQuickTab("creator", "CreatorTools.qml", new CreatorModel(m_shell, m_instance, this));
         else if (tab.key == "settings")
@@ -323,6 +334,28 @@ QWidget* InstancePage::buildSnapshotsTab()
     return stack;
 }
 
+QWidget* InstancePage::buildLogsTab(const QList<BasePage*>& pages)
+{
+    // simple view: the Wraith log viewer (files, filters, crash analysis); advanced: Prism's live console and log pages
+    auto* stack = qobject_cast<QStackedWidget*>(buildQuickTab("logs", "LogViewer.qml", new LogViewerModel(m_shell, m_instance, this)));
+    auto* host = hostTab("logs", pages);
+    auto* back = new QPushButton(tr("Back to log viewer"), host);
+    back->setCursor(Qt::PointingHandCursor);
+    connect(back, &QPushButton::clicked, this, [this, stack, host] {
+        host->deactivate();
+        stack->setCurrentIndex(0);
+        showTab(m_tab);
+    });
+    host->addHeaderWidget(back);
+    stack->addWidget(padded(host, stack));
+    if (auto* quick = qobject_cast<QQuickWidget*>(stack->widget(0)); quick && quick->rootObject()) {
+        auto* relay = new QAction(quick);
+        connect(relay, &QAction::triggered, this, [this, stack, host] { showAdvanced(stack, host, "console"); });
+        QObject::connect(quick->rootObject(), SIGNAL(advanced()), relay, SLOT(trigger()));
+    }
+    return stack;
+}
+
 QWidget* InstancePage::buildQuickTab(const QString& key, const QString& qml, QObject* model)
 {
     auto* stack = new QStackedWidget(m_tabs);
@@ -336,6 +369,134 @@ QWidget* InstancePage::buildQuickTab(const QString& key, const QString& qml, QOb
         root->setProperty("instanceId", m_instance->id());
     }
     return stack;
+}
+
+QWidget* InstancePage::buildPerformanceCard(QWidget* parent)
+{
+    auto* card = new Widgets::Card(tr("Performance"), parent);
+    auto settings = m_instance->settings();
+
+    // memory recommendation, from the mod count, Minecraft version and this computer's RAM
+    const int modCount = static_cast<int>(QDir(m_instance->modsRoot()).entryList({ "*.jar" }, QDir::Files).size());
+    const QString minecraft = m_instance->getPackProfile()->getComponentVersion("net.minecraft");
+    const int currentMax = settings->get("MaxMemAlloc").toInt();
+    const auto advice = Advanced::recommendMemory(modCount, minecraft, static_cast<qint64>(HardwareInfo::totalRamMiB()), currentMax);
+    auto* useRecommended = new QPushButton(tr("Use %1 GB").arg(QString::number(advice.recommendedMiB / 1024.0, 'g', 3)), card);
+    useRecommended->setCursor(Qt::PointingHandCursor);
+    useRecommended->setEnabled(currentMax != advice.recommendedMiB || !settings->get("OverrideMemory").toBool());
+    connect(useRecommended, &QPushButton::clicked, this, [this, mib = advice.recommendedMiB, useRecommended] {
+        refreshSettingsPage();
+        m_instance->settings()->set("OverrideMemory", true);
+        m_instance->settings()->set("MaxMemAlloc", mib);
+        if (m_instance->settings()->get("MinMemAlloc").toInt() > mib)
+            m_instance->settings()->set("MinMemAlloc", mib);
+        if (auto* page = dynamic_cast<InstanceSettingsPage*>(m_hosts.value("settings")->getPage("settings")))
+            page->loadSettings();
+        useRecommended->setEnabled(false);
+        m_shell->toast(tr("Memory set to %1 GB (reopen the instance to see the slider update)").arg(mib / 1024.0), "success");
+    });
+    QString memoryText = tr("Recommended: %1 GB (%2).").arg(QString::number(advice.recommendedMiB / 1024.0, 'g', 3), advice.reason);
+    if (!advice.warning.isEmpty())
+        memoryText += ' ' + advice.warning;
+    card->addRow(tr("Memory recommendation"), memoryText, useRecommended);
+
+    // garbage collector presets, explained; custom arguments are never replaced without asking
+    auto* preset = new QComboBox(card);
+    preset->setMinimumWidth(260);
+    preset->addItem(tr("Java's defaults (no extra arguments)"), QString());
+    for (const auto& p : Advanced::jvmPresets())
+        preset->addItem(p.name, p.id);
+    const QString currentArgs = settings->get("OverrideJavaArgs").toBool() ? settings->get("JvmArgs").toString() : QString();
+    const QString currentId = Advanced::presetIdFor(currentArgs);
+    if (!currentArgs.trimmed().isEmpty() && currentId.isEmpty())
+        preset->addItem(tr("Your own arguments"), "custom");
+    preset->setCurrentIndex(std::max(0, preset->findData(currentArgs.trimmed().isEmpty() ? QString() : currentId.isEmpty() ? "custom" : currentId)));
+    auto* explanation = Widgets::muted(QString(), card);
+    explanation->setWordWrap(true);
+    auto explain = [explanation, preset] {
+        const QString id = preset->currentData().toString();
+        explanation->setText(tr("Uses Java's own garbage collector settings."));
+        if (id == "custom")
+            explanation->setText(tr("Custom Java arguments set in Advanced → Game & Java."));
+        for (const auto& p : Advanced::jvmPresets())
+            if (p.id == id)
+                explanation->setText(p.summary + ". " + p.explanation);
+    };
+    explain();
+    connect(preset, &QComboBox::activated, this, [this, preset, explain, currentArgs, currentId] {
+        const QString id = preset->currentData().toString();
+        if (id == "custom")
+            return;
+        // replacing hand-written arguments needs a yes
+        if (!currentArgs.trimmed().isEmpty() && currentId.isEmpty()) {
+            const auto answer = QMessageBox::question(window(), tr("Replace Java arguments"),
+                                                      tr("This instance has its own Java arguments:\n\n%1\n\nReplace them with the preset?").arg(currentArgs),
+                                                      QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+            if (answer != QMessageBox::Yes) {
+                preset->setCurrentIndex(preset->findData("custom"));
+                explain();
+                return;
+            }
+        }
+        refreshSettingsPage();
+        QString args;
+        for (const auto& p : Advanced::jvmPresets())
+            if (p.id == id)
+                args = p.args;
+        m_instance->settings()->set("OverrideJavaArgs", !args.isEmpty());
+        m_instance->settings()->set("JvmArgs", args);
+        if (auto* page = dynamic_cast<InstanceSettingsPage*>(m_hosts.value("settings")->getPage("settings")))
+            page->loadSettings();
+        explain();
+        m_shell->toast(args.isEmpty() ? tr("Using Java's defaults") : tr("Java arguments set: %1").arg(preset->currentText()), "success");
+    });
+    card->addRow(tr("Garbage collector"), tr("How Java frees memory; affects stutter."), preset);
+    card->addWidget(explanation);
+    return card;
+}
+
+QWidget* InstancePage::buildSharedFoldersCard(QWidget* parent)
+{
+    auto* card = new Widgets::Card(tr("Shared with other instances"), parent);
+    const QString sharedRoot = FS::PathCombine(APPLICATION->dataRoot(), "shared");
+    static const QHash<QString, QString> s_labels = { { "resourcepacks", QObject::tr("Resource packs") },
+                                                      { "shaderpacks", QObject::tr("Shader packs") },
+                                                      { "screenshots", QObject::tr("Screenshots") },
+                                                      { "schematics", QObject::tr("Schematics") } };
+    for (const auto& folder : Advanced::SharedFolders::shareableFolders()) {
+        auto* toggle = new Widgets::Switch(card);
+        toggle->setChecked(Advanced::SharedFolders::isShared(m_instance->gameRoot(), folder, sharedRoot));
+        connect(toggle, &Widgets::Switch::toggled, this, [this, toggle, folder, sharedRoot](bool on) {
+            if (m_instance->isRunning()) {
+                m_shell->toast(tr("Close the game first."), "warning");
+                toggle->setChecked(!on);
+                return;
+            }
+            if (on) {
+                auto result = Advanced::SharedFolders::share(m_instance->gameRoot(), folder, sharedRoot);
+                if (result)
+                    m_shell->toast(*result, "success");
+                else {
+                    m_shell->toast(tr("Couldn't share: %1").arg(result.error()), "error");
+                    toggle->setChecked(false);
+                }
+            } else {
+                auto result = Advanced::SharedFolders::unshare(m_instance->gameRoot(), folder);
+                if (result)
+                    m_shell->toast(tr("This instance has its own copy again; the shared folder is unchanged."), "success");
+                else {
+                    m_shell->toast(tr("Couldn't stop sharing: %1").arg(result.error()), "error");
+                    toggle->setChecked(true);
+                }
+            }
+        });
+        card->addRow(s_labels.value(folder, folder), folder == "resourcepacks" ? tr("Use one set of packs across instances.") : QString(), toggle);
+    }
+    card->addWidget(Widgets::muted(tr("Shared files live in %1. Turning sharing on moves this instance's files there (nothing is "
+                                      "overwritten); turning it off gives the instance a copy.")
+                                       .arg(QDir::toNativeSeparators(sharedRoot)),
+                                   card));
+    return card;
 }
 
 QWidget* InstancePage::buildSettingsTab(const QList<BasePage*>& pages)
@@ -413,6 +574,8 @@ QWidget* InstancePage::buildSettingsTab(const QList<BasePage*>& pages)
     const QString javaPath = settings->get("OverrideJavaLocation").toBool() ? settings->get("JavaPath").toString() : QString();
     essentials->addRow(tr("Java"), javaPath.isEmpty() ? tr("Uses the global Java setting (picked automatically).") : javaPath, javaButton);
     column->addWidget(essentials);
+    column->addWidget(buildPerformanceCard(body));
+    column->addWidget(buildSharedFoldersCard(body));
 
     auto* actions = new Widgets::Card(tr("Instance"), body);
     auto* buttons = new QWidget(actions);

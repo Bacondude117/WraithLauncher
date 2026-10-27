@@ -16,6 +16,8 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "WraithInstanceModel.h"
+#include "settings/Setting.h"
+#include "settings/SettingsObject.h"
 
 #include <QCollator>
 #include <QDateTime>
@@ -108,6 +110,22 @@ QString iconUrl(const QString& iconKey)
     return QString("image://wraith/icon/%1?r=%2").arg(QString::fromUtf8(QUrl::toPercentEncoding(iconKey))).arg(s_iconRevision);
 }
 
+QStringList instanceTags(BaseInstance* instance)
+{
+    // kept in the instance's own instance.cfg, so tags travel with it (Prism ignores the key)
+    return instance->settings()->getOrRegisterSetting("WraithTags", QString())->get().toString().split(',', Qt::SkipEmptyParts);
+}
+
+void setInstanceTags(BaseInstance* instance, const QStringList& tags)
+{
+    QStringList clean;
+    for (const auto& tag : tags)
+        if (!tag.trimmed().isEmpty() && !clean.contains(tag.trimmed(), Qt::CaseInsensitive))
+            clean.append(tag.trimmed());
+    instance->settings()->getOrRegisterSetting("WraithTags", QString());
+    instance->settings()->set("WraithTags", clean.join(','));
+}
+
 QVariantMap instanceInfo(MinecraftInstance* instance)
 {
     if (!instance)
@@ -172,7 +190,8 @@ QHash<int, QByteArray> InstanceModel::roleNames() const
         { MinecraftRole, "minecraft" },    { GroupNameRole, "group" },
         { LastPlayedRole, "lastPlayed" },  { LastPlayedTextRole, "lastPlayedText" },
         { PlayTimeTextRole, "playTimeText" }, { RunningRole, "running" },
-        { CanLaunchRole, "canLaunch" },
+        { CanLaunchRole, "canLaunch" },    { TagsRole, "tags" },
+        { UpdateRole, "updateAvailable" },
     };
 }
 
@@ -211,6 +230,10 @@ QVariant InstanceModel::data(const QModelIndex& index, int role) const
             return instance->isRunning();
         case CanLaunchRole:
             return instance->canLaunch();
+        case TagsRole:
+            return instanceTags(instance);
+        case UpdateRole:
+            return instance->property("wraithUpdateAvailable").toString();
         default:
             return {};
     }
@@ -243,6 +266,35 @@ void InstanceModel::setGroupFilter(const QString& group)
     emit filtersChanged();
 }
 
+void InstanceModel::setTagFilter(const QString& tag)
+{
+    if (m_tagFilter == tag)
+        return;
+    m_tagFilter = tag;
+    invalidateFilter();
+    emit filtersChanged();
+}
+
+QStringList InstanceModel::allTags() const
+{
+    QStringList tags;
+    auto* list = APPLICATION->instances();
+    for (int i = 0; i < list->count(); i++)
+        for (const auto& tag : instanceTags(list->at(i)))
+            if (!tags.contains(tag, Qt::CaseInsensitive))
+                tags.append(tag);
+    tags.sort(Qt::CaseInsensitive);
+    return tags;
+}
+
+void InstanceModel::tagsChanged()
+{
+    if (rowCount() > 0)
+        emit dataChanged(index(0, 0), index(rowCount() - 1, 0), { TagsRole });
+    invalidateFilter();
+    emit filtersChanged();
+}
+
 void InstanceModel::setSortMode(const QString& mode)
 {
     if (m_sortMode == mode)
@@ -269,6 +321,8 @@ bool InstanceModel::filterAcceptsRow(int sourceRow, const QModelIndex& sourcePar
     if (!m_filterText.isEmpty() && !instance->name().contains(m_filterText, Qt::CaseInsensitive))
         return false;
     if (!m_groupFilter.isEmpty() && APPLICATION->instances()->getInstanceGroup(instance->id()) != m_groupFilter)
+        return false;
+    if (!m_tagFilter.isEmpty() && !instanceTags(instance).contains(m_tagFilter, Qt::CaseInsensitive))
         return false;
     if (!m_loaderFilter.isEmpty()) {
         const QString loader = packInfo(instance).loader;

@@ -138,6 +138,9 @@ void Store::walk(const QString& dir, bool includeWorlds, QStringList& out) const
     for (const auto& entry : entries) {
         const QString relative = relativeSlash(root, entry.absoluteFilePath());
         if (entry.isDir()) {
+            // shared folders are links to a folder other instances use too; they are not this instance's to restore
+            if (entry.isJunction() || entry.isSymLink())
+                continue;
             // test with a file name inside the folder, so excluded folders are skipped without walking them
             if (inScope(relative + "/x", includeWorlds))
                 walk(entry.absoluteFilePath(), includeWorlds, out);
