@@ -470,6 +470,11 @@ set(META_SOURCES
 set(API_SOURCES
     modplatform/ModIndex.h
     modplatform/ModIndex.cpp
+
+    # Wraith: unified modpack search
+    modplatform/unified/UnifiedPack.h
+    modplatform/unified/UnifiedPack.cpp
+
     modplatform/ResourceType.h
     modplatform/ResourceType.cpp
 

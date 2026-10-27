@@ -23,7 +23,7 @@ Each step is small, builds cleanly (`wraith\build-windows.cmd build`), passes te
 - [x] 1.5 README "About this fork" section (fork of Prism, not affiliated/endorsed, GPL-3.0, credits).
 
 ## Phase 2 â€” Goal 1: Unified modpack browser
-- [ ] 2.1 Pure logic `launcher/modplatform/unified/UnifiedPack.{h,cpp}`: `UnifiedPack` struct, name
+- [x] 2.1 Pure logic `launcher/modplatform/unified/UnifiedPack.{h,cpp}`: `UnifiedPack` struct, name
       normalisation, merge of duplicates across sources, ranking (relevance â†’ popularity). Unit tests.
 - [ ] 2.2 Source searchers (`UnifiedSearch.{h,cpp}`): parallel NetJobs for Modrinth `/search`, CurseForge
       `/mods/search` (only when a key is configured), FTB `/modpack/search` + details, Technic `/search`,
