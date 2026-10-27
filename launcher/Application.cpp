@@ -1403,6 +1403,9 @@ void Application::performMainStartupAction()
         auto* inst = instances()->getInstanceById(m_instanceIdToShowWindowOf);
         if (inst) {
             qDebug() << "<> Showing window of instance " << m_instanceIdToShowWindowOf;
+            // Wraith: the instance page lives in the main window's shell, so open that window first
+            if (!m_settings->get("WraithClassicLayout").toBool() && !m_mainWindow)
+                showMainWindow(false);
             showInstanceWindow(inst);
             return;
         }

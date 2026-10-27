@@ -60,6 +60,12 @@ Resume from the first unchecked step in PLAN.md.
       Release build.
     - Verified: 25/25 tests; a Technic Solder install from Browse; FTB and ATLauncher version lists; screenshots
       22–24.
+  - Step 2, parity audit (FEATURES.md rewritten with Verified/Moved statuses; nothing left Missing or Broken):
+    - Fixed: the delete toast with Undo never appeared, and `--show` opened Prism's old window.
+    - Fixed: missing shortcuts (Ctrl+Z, Ctrl+K/G/I/D, F2, Ctrl+0..9, Ctrl+, on Windows), and library keyboard
+      navigation.
+    - Verified by script: copy, rename, change group, icon picker, export (zip and mrpack), create shortcut, delete
+      and Undo, `--show`, `--alive`, `--import`, and the shortcuts.
 
 ## Next
 - Follow-ups are in SUMMARY.md under "Unfinished and risky": a real game launch and server start (both need an

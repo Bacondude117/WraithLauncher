@@ -12,10 +12,11 @@ Item {
     property string lastPlayedText
     property string playTimeText
     property bool running: false
+    property bool keyboardFocus: false  // the library's keyboard cursor is on this card
 
     implicitWidth: 216
     implicitHeight: 252
-    readonly property bool hovered: mouse.containsMouse || play.hovered || more.hovered
+    readonly property bool hovered: mouse.containsMouse || play.hovered || more.hovered || keyboardFocus
 
     Rectangle {
         id: card
@@ -27,7 +28,7 @@ Item {
         radius: Theme.radiusCard
         color: root.hovered ? Theme.surfaceHover : Theme.surface
         border.width: 1
-        border.color: root.running ? Theme.withAlpha(Theme.success, 0.6) : root.hovered ? Theme.borderStrong : Theme.border
+        border.color: root.keyboardFocus ? Theme.accent : root.running ? Theme.withAlpha(Theme.success, 0.6) : root.hovered ? Theme.borderStrong : Theme.border
         Behavior on color { ColorAnimation { duration: Theme.fast } }
         Behavior on border.color { ColorAnimation { duration: Theme.fast } }
 

@@ -27,6 +27,7 @@
 #include <QMenu>
 #include <QPainter>
 #include <QPainterPath>
+#include <QFileInfo>
 #include <QTimer>
 #include <QUrl>
 #include <QUrlQuery>
@@ -375,8 +376,10 @@ void Backend::remove(const QString& id)
     if (!instance)
         return;
     const QString name = instance->name();
+    const QString root = instance->instanceRoot();
     action("actionDeleteInstance")->trigger();
-    if (instanceById(id))
+    // The instance list only drops a trashed instance a moment later, so look at its folder instead.
+    if (QFileInfo::exists(root))
         return;  // cancelled, or it is still running
     auto* undo = action("actionUndoTrashInstance");
     if (undo && undo->isEnabled())

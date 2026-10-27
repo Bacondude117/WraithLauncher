@@ -56,8 +56,14 @@ void MainWindow::setupWraithShell()
     setCentralWidget(root);
     setMinimumSize(980, 640);
 
-    // keyboard shortcuts of actions whose toolbars and menus are gone
-    addActions({ ui->actionAddInstance, ui->actionSettings, ui->actionCloseWindow });
+    // keyboard shortcuts of actions whose toolbars and menus are gone: Ctrl+N, Ctrl+, Ctrl+W, Ctrl+Z (undo delete)
+    // and the account switches (Ctrl+1..9, Ctrl+0). Instance shortcuts (Ctrl+K/G/D/I, Delete, F2) live on the
+    // instance page, which knows which instance they mean.
+    addActions({ ui->actionAddInstance, ui->actionSettings, ui->actionCloseWindow, ui->actionUndoTrashInstance });
+    // QKeySequence::Preferences is empty on Windows and Linux; Ctrl+, is what DESIGN.md promises everywhere
+    if (!ui->actionSettings->shortcuts().contains(QKeySequence(tr("Ctrl+,"))))
+        ui->actionSettings->setShortcuts(ui->actionSettings->shortcuts() << QKeySequence(tr("Ctrl+,")));
+    addActions(ui->accountsMenu->actions());
 }
 
 void MainWindow::wraithShowInstance(MinecraftInstance* instance, const QString& page)

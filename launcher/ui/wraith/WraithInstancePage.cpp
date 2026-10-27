@@ -165,6 +165,20 @@ InstancePage::InstancePage(Shell* shell, MinecraftInstance* instance, QWidget* p
     // Esc goes back to the library
     new QShortcut(QKeySequence(Qt::Key_Escape), this, this, [shell] { shell->showPage("library"); }, Qt::WidgetWithChildrenShortcut);
 
+    // Prism's instance shortcuts, for this instance
+    auto* backend = shell->backend();
+    const QString id = instance->id();
+    auto shortcut = [this](const QKeySequence& keys, std::function<void()> run) {
+        new QShortcut(keys, this, this, std::move(run), Qt::WidgetWithChildrenShortcut);
+    };
+    shortcut(QKeySequence(tr("Ctrl+K")), [backend, id] { backend->stop(id); });
+    shortcut(QKeySequence(tr("Ctrl+G")), [backend, id] { backend->changeGroup(id); });
+    shortcut(QKeySequence(tr("Ctrl+D")), [backend, id] { backend->duplicate(id); });
+    shortcut(QKeySequence(tr("Ctrl+I")), [this] { showTab("settings"); });
+    shortcut(QKeySequence(Qt::Key_F2), [backend, id] { backend->rename(id); });
+    shortcut(QKeySequence(tr("Ctrl+Return")), [backend, id] { backend->launch(id); });
+    // Delete stays with the lists on this page (mods, worlds); in the library it deletes the focused instance
+
     // like Prism's console window: show the game log when the game starts, if the console setting asks for it
     connect(instance, &BaseInstance::runningStatusChanged, this, [this](bool running) {
         if (running && isVisible() && m_instance->settings()->get("ShowConsole").toBool())

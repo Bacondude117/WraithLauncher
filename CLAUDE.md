@@ -49,7 +49,14 @@ Gotchas:
   overlay tool that draws into Direct3D windows; in-app capture (`shot`) avoids it, external screen grabs don't.
 - QML: a local component may not share a name with a Qt Quick Controls type (Qt 6.10+ has `SearchField`), and
   a model role must not be called `enabled`. `font.pixelSize` takes integers.
-- `git commit -m` with double quotes in the message is mangled by Windows PowerShell 5.1; use `-F <file>`.
+- `git commit -m` with double quotes in the message is mangled by Windows PowerShell 5.1; use `-F <file>`, written
+  without a BOM (`[IO.File]::WriteAllText(path, text, (New-Object Text.UTF8Encoding($false)))`).
+- Deleting an instance in a test moves it to the **Windows Recycle Bin** (outside the repo). Press Undo in the same run
+  (`toast-action`), or restore it from the bin with Shell.Application (Namespace 10, verb "Restore") and delete it
+  inside the repo.
+- UI script: `action`/`backend` commands run asynchronously so `modal-*` lines can handle the dialog they open; `key
+  <seq>` runs a binding. Real key presses for QML: PostMessage WM_KEYDOWN to the main window (no modifiers).
+- Measure performance with `wraith\tools\measure-startup.ps1` (PERFORMANCE.md) after anything that touches startup.
 - `wraith\build-windows.cmd install` deploys QML imports via windeployqt `--qmldir`; it once exited 255 mid-way
   and succeeded when re-run.
 

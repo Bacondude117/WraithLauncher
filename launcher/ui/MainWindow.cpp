@@ -718,6 +718,8 @@ void MainWindow::repopulateAccountsMenu()
     ui->accountsMenu->addAction(ui->actionManageAccounts);
 
     accountsButtonMenu->addActions(ui->accountsMenu->actions());
+    if (m_wraithShell)
+        addActions(ui->accountsMenu->actions());  // Wraith: keep Ctrl+0..9 working without the menu bar
 }
 
 void MainWindow::updatesAllowedChanged(bool allowed)

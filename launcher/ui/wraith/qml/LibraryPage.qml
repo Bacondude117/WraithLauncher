@@ -17,6 +17,7 @@ Rectangle {
     function pageShown() { enterAnim.restart() }
     function setSearch(text) { search.text = text }
     function setLoader(loader) { model.loaderFilter = loader }
+    function focusGrid(unused) { grid.forceActiveFocus() }
 
     Shortcut { sequences: [StandardKey.Find]; onActivated: search.forceActiveFocus() }
 
@@ -65,6 +66,8 @@ Rectangle {
                     width: Math.min(320, header.width * 0.3)
                     placeholderText: qsTr("Search instances")
                     onTextChanged: root.model.filterText = text
+                    Keys.onDownPressed: grid.forceActiveFocus()
+                    Keys.onReturnPressed: grid.forceActiveFocus()
                 }
                 WButton { icon: "import"; text: qsTr("Import"); onClicked: backend.importInstance() }
                 WButton { kind: "primary"; icon: "plus"; text: qsTr("New instance"); onClicked: backend.newInstance(root.model.groupFilter) }
@@ -132,6 +135,38 @@ Rectangle {
             cellWidth: Math.floor(width / columns)
             cellHeight: 272
             bottomMargin: Theme.pageMargin
+            // Keyboard, like Prism's instance grid: arrows move, Enter opens, Ctrl+Enter plays, Delete/Backspace
+            // deletes (after confirmation), F2 renames, Ctrl+K stops, Ctrl+G changes group, Ctrl+D duplicates,
+            // the menu key opens the instance menu.
+            keyNavigationEnabled: true
+            activeFocusOnTab: true
+            currentIndex: -1
+            onActiveFocusChanged: if (activeFocus && currentIndex < 0 && count > 0) currentIndex = 0
+            readonly property string currentId: currentItem ? currentItem.instanceId : ""
+            Keys.onPressed: (event) => {
+                if (currentId.length === 0)
+                    return
+                const ctrl = event.modifiers & Qt.ControlModifier
+                if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter)
+                    ctrl ? backend.launch(currentId) : backend.openInstance(currentId)
+                else if (event.key === Qt.Key_Delete || event.key === Qt.Key_Backspace)
+                    backend.remove(currentId)
+                else if (event.key === Qt.Key_F2)
+                    backend.rename(currentId)
+                else if (event.key === Qt.Key_Menu)
+                    backend.showInstanceMenu(currentId)
+                else if (ctrl && event.key === Qt.Key_K)
+                    backend.stop(currentId)
+                else if (ctrl && event.key === Qt.Key_G)
+                    backend.changeGroup(currentId)
+                else if (ctrl && event.key === Qt.Key_D)
+                    backend.duplicate(currentId)
+                else if (ctrl && event.key === Qt.Key_I)
+                    backend.openInstance(currentId)
+                else
+                    return
+                event.accepted = true
+            }
             delegate: Item {
                 required property string instanceId
                 required property string name
@@ -140,9 +175,11 @@ Rectangle {
                 required property string minecraft
                 required property string lastPlayedText
                 required property bool running
+                required property int index
                 width: grid.cellWidth
                 height: grid.cellHeight
                 InstanceCard {
+                    keyboardFocus: grid.activeFocus && grid.currentIndex === parent.index
                     anchors.fill: parent
                     anchors.margins: 8
                     anchors.bottomMargin: 12

@@ -40,6 +40,7 @@
 #include <QQuickWindow>
 #include <QSGRendererInterface>
 #include <QScreen>
+#include <QShortcut>
 #include <QStackedWidget>
 #include <QTextStream>
 #include <QTimer>
@@ -348,6 +349,7 @@ static QImage captureWindow(QWidget* window)
 //   select <instance name> | action <MainWindow QAction name> | wait <ms> | shot <file.png> | toast <text> | dump | quit
 //   backend <method> <instance name> (e.g. rename, duplicate, remove) | toast-action (click the newest toast's button)
 //   modal-shot <file.png> | modal-type <text> | modal-accept | modal-reject | modal-dump: act on the open modal dialog
+//   key <sequence> (e.g. Ctrl+G): run what that shortcut is bound to in the window or the current page
 // "action" and "backend" run asynchronously, so a dialog they open can be handled by the following lines.
 void Shell::runUiScript(const QString& path)
 {
@@ -430,6 +432,26 @@ void Shell::runUiScript(const QString& path)
                 } else if (auto* dialog = qobject_cast<QDialog*>(modal)) {
                     QTimer::singleShot(0, dialog, command == "modal-accept" ? &QDialog::accept : &QDialog::reject);
                 }
+            } else if (command == "key") {
+                // key <sequence>: runs the window action or current-page shortcut bound to it (registration check;
+                // real key presses go through the same bindings)
+                const QKeySequence keys(rest);
+                bool handled = false;
+                for (auto* windowAction : m_window->actions()) {
+                    if (!handled && windowAction->isEnabled() && windowAction->shortcuts().contains(keys)) {
+                        QTimer::singleShot(0, windowAction, &QAction::trigger);
+                        handled = true;
+                    }
+                }
+                if (auto* current = m_stack->currentWidget(); current && !handled) {
+                    for (auto* shortcut : current->findChildren<QShortcut*>()) {
+                        if (!handled && shortcut->isEnabled() && shortcut->keys().contains(keys)) {
+                            QMetaObject::invokeMethod(shortcut, "activated", Qt::QueuedConnection);
+                            handled = true;
+                        }
+                    }
+                }
+                qDebug() << "Wraith UI script: key" << rest << (handled ? "handled" : "NOT BOUND");
             } else if (command == "toast-action") {
                 for (auto* toastFrame : findChildren<QFrame*>("wraithToast")) {
                     if (auto* button = toastFrame->findChild<QPushButton*>(); button && toastFrame->isVisible()) {
